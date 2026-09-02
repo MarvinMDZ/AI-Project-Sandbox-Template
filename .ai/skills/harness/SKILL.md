@@ -31,6 +31,9 @@ Remove = delete the file or directory. Nothing else references it.
   rejects anything else, as it rejects unknown frontmatter keys and duplicate names).
 - A skill name must be unique across `skills/` and `workflows/`.
 - Tool versions live in `.devcontainer/devcontainer.json` build args; changing them is a rebuild.
+- In a project, `.ai/claude/settings.json` and `.ai/codex/config.toml` are the template's:
+  add Claude permissions in the repository `.claude/settings.json` and Codex settings in the
+  project `.codex/config.toml` (see `.ai/OWNERSHIP` and the Ownership section of `.ai/README.md`).
 
 ## Apply and validate
 

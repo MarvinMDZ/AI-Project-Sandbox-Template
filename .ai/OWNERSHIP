@@ -1,0 +1,48 @@
+# Who owns each file this template ships. One entry per line: kind, one space, path; a
+# directory entry covers its subtree. template: restored from a template release by
+# /harness-update, never edited in a project (propose the change upstream). project: yours
+# after /bootstrap; an update never touches it. Anything a project adds elsewhere is
+# project-owned. source: the template repository the updates come from.
+source https://github.com/MarvinMDZ/AI-Project-Sandbox-Template.git
+template .ai/OWNERSHIP
+template .ai/README.md
+template .ai/RULES.md
+template .ai/agents/architect.md
+template .ai/agents/developer.md
+template .ai/agents/qa.md
+template .ai/agents/reviewer.md
+template .ai/agents/tech-writer.md
+template .ai/claude/settings.json
+template .ai/codex/config.toml
+template .ai/models.json
+template .ai/schemas
+template .ai/skills/harness
+template .ai/templates
+template .ai/workflows/bootstrap
+template .ai/workflows/commit
+template .ai/workflows/docs-sync
+template .ai/workflows/implement
+template .ai/workflows/plan
+template .ai/workflows/review
+template .ai/workflows/verify
+template .devcontainer/Dockerfile
+template .devcontainer/devcontainer.json
+template .devcontainer/healthcheck.sh
+template .devcontainer/managed-settings.json
+template .devcontainer/post-start.sh
+template .devcontainer/render.py
+template .devcontainer/test_render.py
+template .dockerignore
+template .editorconfig
+template .gitattributes
+template .github/workflows/ci.yml
+template .markdownlint.yaml
+project .devcontainer/project.sh
+project .env.example
+project .github/ISSUE_TEMPLATE
+project .github/PULL_REQUEST_TEMPLATE.md
+project .gitignore
+project AGENTS.md
+project CLAUDE.md
+project README.md
+project docs

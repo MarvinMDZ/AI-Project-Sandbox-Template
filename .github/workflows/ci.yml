@@ -54,5 +54,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # shellcheck ships with the ubuntu runner image; ruff is pinned so the gate is reproducible.
-      - run: shellcheck -S warning .devcontainer/post-start.sh .devcontainer/healthcheck.sh
+      - run: shellcheck -S warning .devcontainer/post-start.sh .devcontainer/healthcheck.sh .devcontainer/project.sh
       - run: pip install "ruff==0.16.5" && ruff check --line-length 120 --select E,F,W,B,UP,SIM .devcontainer/render.py .devcontainer/test_render.py

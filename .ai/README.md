@@ -53,6 +53,24 @@ Credentials, sessions and history are never touched.
 - `state/`: git-ignored. `current-task.md` is the checkpoint an agent writes before clearing a
   bloated session (goal, done, remaining, files, decisions, verification) and deletes when done.
 
+## Ownership
+
+`.ai/OWNERSHIP` lists every file the template ships as `template` (replaced wholesale by a
+template update; never edit it in a project, propose the change upstream) or `project` (yours
+after `/bootstrap`; an update never touches it). Files a project adds next to them, such as
+`.ai/skills/<name>/`, `.ai/agents/<name>.md` or `.ai/workflows/<name>/`, are project-owned by
+definition, which is why the list names agents, workflows and skills one by one. Where the
+project's own additions go:
+
+- Claude Code permissions, hooks, env: the repository-level `.claude/settings.json` (merged by
+  Claude Code with the rendered `~/.claude/settings.json`).
+- Codex settings and MCP servers: the project's `.codex/config.toml` (`render.py` renders a
+  trust entry for the workspace so that layer loads).
+- Tools in the image: `.devcontainer/project.sh`, run as root at the end of the image build.
+- CI jobs: a second workflow file next to `.github/workflows/ci.yml`.
+- Global rules (`RULES.md`) and the hard policy (`managed-settings.json`) have no project
+  layer on purpose.
+
 ## Change something
 
 1. Edit or add the file here.

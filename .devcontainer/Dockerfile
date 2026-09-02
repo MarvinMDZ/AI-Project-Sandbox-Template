@@ -94,4 +94,12 @@ alias claude-hard='claude --effort xhigh'
 alias codex-hard='codex -c model_reasoning_effort=xhigh'
 BASHRC
 
+# --- project tools: the only project-owned input of this build --------------------------
+# Everything above is template-owned and replaced by a template update. A project installs
+# its own tools in .devcontainer/project.sh (runs as root, once, at image build) and rebuilds.
+USER root
+COPY --chmod=0755 .devcontainer/project.sh /usr/local/lib/sandbox/project.sh
+RUN /usr/local/lib/sandbox/project.sh
+USER node
+
 WORKDIR /workspaces

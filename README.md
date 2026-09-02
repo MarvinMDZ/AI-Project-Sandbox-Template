@@ -30,6 +30,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
   post-start.sh         every start: SSH keys, git trust, harness render, gh, cloudflared
   healthcheck.sh        tools, isolation, harness render, logins; CI runs it after the build
   render.py             .ai/ -> ~/.claude, ~/.codex, ~/.agents (single source of truth)
+  project.sh            your tools, run as root at the end of the image build; the rest is the template's
 .ai/
   RULES.md              global rules for both CLIs, baked into the image (rebuild to change)
   agents/               architect, developer, reviewer, qa, tech-writer
@@ -73,8 +74,10 @@ and `sudo` works for you. The managed policy raises the bar for agents without s
 - Codex: the `workspace-write` sandbox limits writes and network, not reads. A Codex agent can
   read any file the `node` user can, including the credential files listed above.
 
-A missing tool goes into the Dockerfile and a rebuild, never a hand install. Root shell when
-you need one: `docker exec -u root -it <container> bash`.
+A missing tool goes into `.devcontainer/project.sh` and a rebuild, never a hand install and
+never the Dockerfile, which a template update replaces (`.ai/OWNERSHIP` lists what is the
+template's and what is yours). Root shell when you need one:
+`docker exec -u root -it <container> bash`.
 
 ## GitHub, SSH, Docker
 

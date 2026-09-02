@@ -14,7 +14,9 @@ New project; development happens inside the template's devcontainer with the sha
 
 ### Decision
 
-Keep `.devcontainer/` and `.ai/` as provided. Project-specific rules go in `AGENTS.md`.
+Keep the template-owned files listed in `.ai/OWNERSHIP` as provided. Project rules go in
+`AGENTS.md`, project tools in `.devcontainer/project.sh`, project agent settings in
+`.claude/settings.json` and `.codex/config.toml`, project CI in its own workflow file.
 
 ### Consequences
 

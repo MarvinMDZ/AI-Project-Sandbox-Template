@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 import tempfile
 import tomllib
 import unittest
@@ -255,6 +256,55 @@ class VerifyTests(unittest.TestCase):
         findings = render.verify(self.home, manifest)
         self.assertEqual([f.status for f in findings], ["missing"])
         self.assertEqual(render.exit_code(findings), 1)
+
+
+class OwnershipTests(unittest.TestCase):
+    """`.ai/OWNERSHIP` is the list a template update restores. Every entry must exist, and in the
+    template repository itself every shipped file under .ai/, .devcontainer/ and .github/ must be
+    classified, so a new file cannot be forgotten by the update."""
+
+    ROOT = render.HARNESS.parent
+
+    def setUp(self):
+        self.source, self.entries = "", []
+        for line in (self.ROOT / ".ai" / "OWNERSHIP").read_text(encoding="utf-8").splitlines():
+            if not line.strip() or line.startswith("#"):
+                continue
+            kind, _, path = line.partition(" ")
+            if kind == "source":
+                self.source = path.strip()
+            elif kind in ("template", "project"):
+                self.entries.append((kind, path.strip()))
+            else:
+                self.fail(f"OWNERSHIP: unknown kind in {line!r}")
+
+    def test_entries_are_unique_and_exist(self):
+        paths = [p for _, p in self.entries]
+        self.assertEqual(len(paths), len(set(paths)))
+        self.assertTrue(self.source.startswith("https://"))
+        for path in paths:
+            self.assertTrue((self.ROOT / path).exists(), path)
+
+    def test_template_repository_classifies_every_shipped_file(self):
+        def git(*args: str) -> str:
+            command = ["git", "-C", str(self.ROOT), *args]
+            return subprocess.run(command, capture_output=True, text=True, check=True).stdout
+
+        def normalize(url: str) -> str:
+            return url.strip().lower().removesuffix("/").removesuffix(".git")
+
+        try:
+            origin = git("remote", "get-url", "origin")
+        except (OSError, subprocess.CalledProcessError) as exc:
+            self.skipTest(f"git unavailable: {exc}")
+        if normalize(origin) != normalize(self.source):
+            self.skipTest("not the template repository; projects add files freely")
+        covered = [p for _, p in self.entries]
+        for tracked in git("ls-files", "--", ".ai", ".devcontainer", ".github").splitlines():
+            self.assertTrue(
+                any(tracked == p or tracked.startswith(p + "/") for p in covered),
+                f"{tracked} is not classified in .ai/OWNERSHIP",
+            )
 
 
 if __name__ == "__main__":
