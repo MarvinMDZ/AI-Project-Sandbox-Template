@@ -1,0 +1,13 @@
+# The devcontainer build context is the repository root (the image bakes .ai/RULES.md).
+# Keep it small and secret-free. A project Dockerfile built from the root shares this file.
+.git
+node_modules
+build
+out
+.venv
+__pycache__
+*.pyc
+.env
+.env.*
+!.env.example
+*.log

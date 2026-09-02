@@ -5,7 +5,8 @@
 rewritten on every container start, so a removed agent, skill or rule leaves no trace.
 Session state (credentials, sessions, history, plugin caches) is never touched.
 
-    .ai/RULES.md             -> ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md
+    .ai/RULES.md             -> baked into the image by the Dockerfile (/etc/claude-code/CLAUDE.md,
+                                /etc/codex/AGENTS.md); here only ~/.codex/AGENTS.md -> /etc/codex/AGENTS.md
     .ai/claude/settings.json -> ~/.claude/settings.json
     .ai/codex/config.toml    -> ~/.codex/config.toml (+ trust entry for the workspace)
     .ai/agents/*.md          -> ~/.claude/agents/*.md, ~/.codex/agents/*.toml
@@ -27,6 +28,8 @@ import tomllib
 from pathlib import Path
 
 HARNESS = Path(__file__).resolve().parent.parent / ".ai"
+# Codex has no managed rules path; the image ships RULES.md here and $CODEX_HOME/AGENTS.md links to it.
+CODEX_IMAGE_RULES = Path("/etc/codex/AGENTS.md")
 
 # Frontmatter keys Claude Code understands in a subagent file. Anything else is harness-only.
 CLAUDE_AGENT_KEYS = {
@@ -108,9 +111,12 @@ def render(home: Path, workspace: Path) -> dict[str, int]:
     for d in (claude / "skills", claude / "agents", codex / "agents", agents_skills):
         d.mkdir(parents=True)
 
-    rules = (HARNESS / "RULES.md").read_text(encoding="utf-8")
-    (claude / "CLAUDE.md").write_text(rules, encoding="utf-8")
-    (codex / "AGENTS.md").write_text(rules, encoding="utf-8")
+    # Global rules are baked into the image: Claude Code loads /etc/claude-code/CLAUDE.md natively
+    # (a stale ~/.claude/CLAUDE.md was wiped above); Codex only reads $CODEX_HOME/AGENTS.md, so link it.
+    if not (HARNESS / "RULES.md").is_file():
+        raise FileNotFoundError(f"{HARNESS / 'RULES.md'}: missing; the image build copies it")
+    if CODEX_IMAGE_RULES.is_file():
+        (codex / "AGENTS.md").symlink_to(CODEX_IMAGE_RULES)
 
     settings = (HARNESS / "claude" / "settings.json").read_text(encoding="utf-8")
     json.loads(settings)

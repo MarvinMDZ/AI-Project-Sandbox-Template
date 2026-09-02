@@ -63,11 +63,14 @@ ENV HOME=/home/node \
 RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
  && claude --version
 
-# --- Claude Code hard policies: highest precedence, nobody can relax them -------
-# Both the file and the ENV come AFTER the install on purpose: the installer runs the CLI,
-# which honors DISABLE_UPDATES from the managed policy or the environment and then refuses
-# to install. From here on neither the updater nor a manual `claude update` can move the pin.
-COPY managed-settings.json /etc/claude-code/managed-settings.json
+# --- Hard policies and global rules: root-owned, read-only, rebuild to change -------
+# They come AFTER the install on purpose: the installer runs the CLI, which honors
+# DISABLE_UPDATES from the managed policy or the environment and then refuses to install.
+# Claude Code loads /etc/claude-code/CLAUDE.md natively (managed policy, cannot be excluded).
+# Codex has no managed path: render.py links $CODEX_HOME/AGENTS.md to /etc/codex/AGENTS.md.
+COPY --chmod=0444 .devcontainer/managed-settings.json /etc/claude-code/managed-settings.json
+COPY --chmod=0444 .ai/RULES.md /etc/claude-code/CLAUDE.md
+COPY --chmod=0444 .ai/RULES.md /etc/codex/AGENTS.md
 ENV DISABLE_UPDATES=1 \
     DISABLE_AUTOUPDATER=1
 

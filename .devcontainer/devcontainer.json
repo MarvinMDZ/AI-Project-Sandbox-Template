@@ -2,6 +2,8 @@
   "name": "sandbox",
   "build": {
     "dockerfile": "Dockerfile",
+    // Repository root, so the image can bake .ai/RULES.md. The root .dockerignore keeps it small.
+    "context": "..",
     "args": {
       "TZ": "${localEnv:TZ:Europe/Madrid}",
       // Claude Code: "stable" | "latest" | exact version (e.g. "2.1.211"). Native installer, auto-update off.

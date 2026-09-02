@@ -55,10 +55,17 @@ if python3 "$ROOT/.devcontainer/render.py" --check >/dev/null 2>&1; then
 else
   fail "render.py --check failed; run it to see why"
 fi
-if [ -f "$HOME/.claude/CLAUDE.md" ] && [ -f "$HOME/.codex/AGENTS.md" ]; then
-  pass "rules rendered into both CLIs"
+if [ -f /etc/claude-code/CLAUDE.md ] && [ ! -w /etc/claude-code/CLAUDE.md ] \
+   && [ -f /etc/codex/AGENTS.md ] && [ ! -w /etc/codex/AGENTS.md ] \
+   && [ "$(readlink "$HOME/.codex/AGENTS.md")" = /etc/codex/AGENTS.md ]; then
+  pass "global rules baked into the image, read-only, linked for Codex"
 else
-  fail "rules not rendered (did post-start.sh run?)"
+  fail "global rules: /etc/claude-code/CLAUDE.md, /etc/codex/AGENTS.md or the ~/.codex/AGENTS.md link is missing or writable"
+fi
+if cmp -s "$ROOT/.ai/RULES.md" /etc/claude-code/CLAUDE.md; then
+  pass "image rules match .ai/RULES.md"
+else
+  warn "image rules differ from .ai/RULES.md: rebuild the container to apply the edit"
 fi
 want=$(count "$ROOT/.ai/agents" -name '*.md')
 got_claude=$(count "$HOME/.claude/agents" -name '*.md')

@@ -5,7 +5,7 @@ Single source of truth for how Claude Code and Codex behave inside the sandbox.
 
 | Source                      | Claude Code                    | Codex                                  |
 |-----------------------------|--------------------------------|----------------------------------------|
-| `RULES.md`                  | `~/.claude/CLAUDE.md`          | `~/.codex/AGENTS.md`                   |
+| `RULES.md` (image build)    | `/etc/claude-code/CLAUDE.md`   | `/etc/codex/AGENTS.md`, linked from `~/.codex/AGENTS.md` |
 | `agents/<name>.md`          | `~/.claude/agents/<name>.md`   | `~/.codex/agents/<name>.toml`          |
 | `skills/<name>/SKILL.md`    | `~/.claude/skills/<name>/`     | `~/.agents/skills/<name>/`             |
 | `workflows/<name>/SKILL.md` | `~/.claude/skills/<name>/`     | `~/.agents/skills/<name>/`             |
@@ -20,7 +20,8 @@ Credentials, sessions and history are never touched.
 
 ## Layout
 
-- `RULES.md`: global rules loaded into every session of both CLIs.
+- `RULES.md`: global rules loaded into every session of both CLIs. Baked into the image by the
+  Dockerfile, root-owned and read-only inside the container; a change needs *Rebuild Container*.
 - `agents/`: specialist roles. One Markdown file per agent: flat `key: value` frontmatter + system prompt.
   - `name`, `description` (one line): required.
   - `model`: profile from `models.json` (`fast` | `standard` | `reasoning` | `inherit`).
@@ -39,5 +40,7 @@ Credentials, sessions and history are never touched.
 1. Edit or add the file here.
 2. `python3 .devcontainer/render.py` (or restart the container).
 3. Restart the CLI session so it re-reads its config.
+
+`RULES.md` is the exception: it lives in the image, so *Rebuild Container* replaces step 2.
 
 `python3 .devcontainer/render.py --check` renders into a temp dir and validates (CI runs it).

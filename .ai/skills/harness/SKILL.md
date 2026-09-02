@@ -13,7 +13,7 @@ description: How this project's agent harness works and how to change it - add o
 
 | What            | Where                                   | Format                                              |
 |-----------------|-----------------------------------------|-----------------------------------------------------|
-| global rule     | `.ai/RULES.md`                      | Markdown, keep it short; it loads into every session|
+| global rule     | `.ai/RULES.md`                      | Markdown, keep it short; loads into every session; baked into the image, rebuild to apply |
 | agent           | `.ai/agents/<name>.md`              | flat frontmatter (`name`, `description`, `model`, `tools`, `sandbox`) + system prompt |
 | workflow        | `.ai/workflows/<name>/SKILL.md`     | Agent Skills `SKILL.md`; invoked as `/<name>` or `$<name>` |
 | skill           | `.ai/skills/<name>/SKILL.md`        | same; may bundle scripts and reference files        |
@@ -39,3 +39,6 @@ python3 .devcontainer/render.py           # apply now (same as a container resta
 ```
 
 Then restart the CLI session: both tools read their config at startup.
+
+Rules are the exception: `.ai/RULES.md` is baked into the image, so *Rebuild Container*;
+`bash .devcontainer/healthcheck.sh` warns while the image copy is stale.

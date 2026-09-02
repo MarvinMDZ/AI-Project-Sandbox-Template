@@ -30,7 +30,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
   healthcheck.sh        tools, isolation, harness render, logins; CI runs it after the build
   render.py             .ai/ -> ~/.claude, ~/.codex, ~/.agents (single source of truth)
 .ai/
-  RULES.md              global rules for both CLIs
+  RULES.md              global rules for both CLIs, baked into the image (rebuild to change)
   agents/               architect, developer, reviewer, qa, tech-writer
   workflows/            /plan /implement /verify /review /commit /docs-sync
   skills/               reusable know-how (harness maintenance)
@@ -47,7 +47,8 @@ AGENTS.md  CLAUDE.md    project instructions (Codex native; Claude imports AGENT
 | Concern                                                | Mechanism                                                                        | To change it                                                          |
 |--------------------------------------------------------|----------------------------------------------------------------------------------|-----------------------------------------------------------------------|
 | Tool versions                                          | Pinned by build args in `devcontainer.json`; auto-update disabled                | edit the arg, rebuild                                                 |
-| Agent config (rules, agents, skills, settings)         | `.ai/` rendered into the container on every start; managed dirs wiped first | edit `.ai/`, run `python3 .devcontainer/render.py` or restart     |
+| Global rules                                           | `.ai/RULES.md` baked into the image as `/etc/claude-code/CLAUDE.md` and `/etc/codex/AGENTS.md`, root-owned, read-only | edit `.ai/RULES.md`, rebuild                                          |
+| Agent config (agents, skills, settings)                | `.ai/` rendered into the container on every start; managed dirs wiped first | edit `.ai/`, run `python3 .devcontainer/render.py` or restart     |
 | Hard policies                                          | `/etc/claude-code/managed-settings.json` baked into the image                    | edit `.devcontainer/managed-settings.json`, rebuild                   |
 | Credentials, sessions, history                         | Named volumes `sandbox-claude`, `sandbox-codex`, `sandbox-gh`, `sandbox-history` | `docker volume rm <name>` to forget a login                           |
 | Host config (`~/.claude`, `~/.codex`, plugins, skills) | never mounted                                                                    | -                                                                     |
@@ -89,6 +90,8 @@ serves both Claude Code and Codex. `python3 .devcontainer/render.py --check` val
 
 ## Updating
 
+- Global rules: edit `.ai/RULES.md`, then *Rebuild Container*. Until then `healthcheck.sh`
+  warns that the image copy is stale.
 - Claude Code / Codex / pnpm / uv: `.devcontainer/devcontainer.json` build args, then
   *Rebuild Container*. `stable` and `latest` channels resolve at build time; use an exact
   version for full reproducibility.
