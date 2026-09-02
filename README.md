@@ -99,4 +99,5 @@ serves both Claude Code and Codex. `python3 .devcontainer/render.py --check` val
 
 Docker Desktop (or another Docker engine), VS Code with the Dev Containers extension (or the
 `devcontainer` CLI). Windows, macOS and Linux hosts are supported; on Windows the SSH mount
-uses `%USERPROFILE%\.ssh`.
+uses `%USERPROFILE%\.ssh`. That directory must exist (empty is fine): Docker refuses to start
+the container when a bind-mount source is missing.
