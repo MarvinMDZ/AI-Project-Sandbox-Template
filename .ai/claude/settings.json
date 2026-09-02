@@ -17,7 +17,8 @@
       "Bash(pnpm test:*)",
       "Bash(pnpm lint:*)",
       "Bash(uv run:*)",
-      "Bash(python3 .devcontainer/render.py:*)",
+      "Bash(python3 .devcontainer/render.py --check)",
+      "Bash(python3 .devcontainer/render.py)",
       "Bash(python3 .devcontainer/render.py --verify)"
     ],
     "deny": [

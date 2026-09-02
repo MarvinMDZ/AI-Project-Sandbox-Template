@@ -25,7 +25,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
 .devcontainer/
   devcontainer.json     image build args (tool versions), volumes, host passthrough env
   Dockerfile            Node 22, pnpm, Python 3 + uv, git, gh, cloudflared, Claude Code, Codex
-  managed-settings.json Claude Code hard policies (secret files and sudo denied), not overridable
+  managed-settings.json Claude Code hard policies (credential, key and .env reads, sudo), not overridable
   post-start.sh         every start: SSH keys, git trust, harness render, gh, cloudflared
   healthcheck.sh        tools, isolation, harness render, logins; CI runs it after the build
   render.py             .ai/ -> ~/.claude, ~/.codex, ~/.agents (single source of truth)
@@ -59,10 +59,18 @@ Host environment variables passed through when set: `ANTHROPIC_API_KEY`, `OPENAI
 `GH_TOKEN`, `CLOUDFLARE_TUNNEL_TOKEN` (arrives as `TUNNEL_TOKEN`). Unset ones are dropped.
 
 The container is a hygiene boundary, not a security boundary: `docker` drives the host daemon
-and `sudo` works for you. Agents cannot escalate: the managed policy denies `sudo` to Claude
-Code, and Codex leaves its `workspace-write` sandbox only with your approval. A missing tool
-goes into the Dockerfile and a rebuild, never a hand install. Root shell when you need one:
-`docker exec -u root -it <container> bash`.
+and `sudo` works for you. The managed policy raises the bar for agents without sealing it:
+
+- Claude Code: the `Read` deny rules cover the built-in file tools and the file commands
+  Claude Code recognizes in Bash (`cat`, `head`, `tail`, `sed`), not a script that opens the
+  file itself. `Bash(sudo:*)` matches `sudo` inside compound commands and behind wrappers such
+  as `nohup` or `timeout`; inside an environment runner (`bash -c`, `docker exec`, `npx`) it
+  falls through to the normal permission prompt, so it holds only while a human approves.
+- Codex: the `workspace-write` sandbox limits writes and network, not reads. A Codex agent can
+  read any file the `node` user can, including the credential files listed above.
+
+A missing tool goes into the Dockerfile and a rebuild, never a hand install. Root shell when
+you need one: `docker exec -u root -it <container> bash`.
 
 ## GitHub, SSH, Docker
 
