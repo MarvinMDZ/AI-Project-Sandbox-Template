@@ -40,7 +40,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
   state/                current-task.md, checkpoint of an unfinished task (git-ignored)
 docs/                   PROJECT, SETUP, STATUS, DECISIONS, plans/
 AGENTS.md  CLAUDE.md    project instructions (Codex native; Claude imports AGENTS.md)
-.github/                CI (harness check + devcontainer build), PR and issue templates
+.github/                CI (harness check, shell and Python lint, devcontainer build), PR and issue templates
 ```
 
 ## How isolation works
