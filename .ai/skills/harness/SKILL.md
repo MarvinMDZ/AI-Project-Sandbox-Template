@@ -36,6 +36,7 @@ Remove = delete the file or directory. Nothing else references it.
 ```bash
 python3 .devcontainer/render.py --check   # validate without touching ~/.claude or ~/.codex
 python3 .devcontainer/render.py           # apply now (same as a container restart)
+python3 -m unittest discover -s .devcontainer -p "test_*.py"   # unit tests for render.py (CI runs them)
 ```
 
 Then restart the CLI session: both tools read their config at startup.
