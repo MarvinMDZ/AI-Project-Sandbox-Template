@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "harness/schemas/handoff.schema.json",
+  "$id": ".ai/schemas/handoff.schema.json",
   "title": "Handoff",
   "description": "What every delegated agent returns when it finishes, blocks or fails.",
   "type": "object",

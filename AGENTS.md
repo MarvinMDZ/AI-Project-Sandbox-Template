@@ -1,6 +1,6 @@
 # Project instructions
 
-Read before working here. Global rules (`harness/RULES.md`) are loaded automatically inside
+Read before working here. Global rules (`.ai/RULES.md`) are loaded automatically inside
 the devcontainer; outside it, read that file first.
 
 ## Orientation
@@ -8,7 +8,7 @@ the devcontainer; outside it, read that file first.
 - `docs/PROJECT.md`: what this system is. `docs/STATUS.md`: where work stands.
 - `docs/DECISIONS.md`: decisions already taken; do not relitigate them silently.
 - `docs/plans/`: approved work. Non-trivial changes start with `/plan`.
-- `harness/`: agents, workflows, skills and schemas. Change behavior there, not by hand.
+- `.ai/`: agents, workflows, skills and schemas. Change behavior there, not by hand.
 
 ## Commands
 

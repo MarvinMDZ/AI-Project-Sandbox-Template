@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "harness/schemas/task.schema.json",
+  "$id": ".ai/schemas/task.schema.json",
   "title": "Task",
   "description": "One unit of delegated implementation work, taken from a plan in docs/plans/.",
   "type": "object",

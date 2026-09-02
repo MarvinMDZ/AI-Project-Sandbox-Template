@@ -26,7 +26,7 @@ grep -qs '^github.com ' "$HOME/.ssh/known_hosts" \
 git config --global --get-all safe.directory 2>/dev/null | grep -qx "$ROOT" \
   || git config --global --add safe.directory "$ROOT"
 
-# --- 3. harness: regenerate agent config from ./harness (single source of truth) ----
+# --- 3. harness: regenerate agent config from ./.ai (single source of truth) ----
 python3 "$ROOT/.devcontainer/render.py" --home "$HOME" --workspace "$ROOT"
 
 # --- 4. GitHub CLI: if logged in (volume or GH_TOKEN), let git push over HTTPS ------

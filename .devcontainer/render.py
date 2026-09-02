@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Render ./harness into the Claude Code and Codex user-level config directories.
+"""Render ./.ai into the Claude Code and Codex user-level config directories.
 
-harness/ is the single source of truth. Everything this script manages is deleted and
+.ai/ is the single source of truth. Everything this script manages is deleted and
 rewritten on every container start, so a removed agent, skill or rule leaves no trace.
 Session state (credentials, sessions, history, plugin caches) is never touched.
 
-    harness/RULES.md             -> ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md
-    harness/claude/settings.json -> ~/.claude/settings.json
-    harness/codex/config.toml    -> ~/.codex/config.toml (+ trust entry for the workspace)
-    harness/agents/*.md          -> ~/.claude/agents/*.md, ~/.codex/agents/*.toml
-    harness/skills/*/            -> ~/.claude/skills/*, ~/.agents/skills/*
-    harness/workflows/*/         -> ~/.claude/skills/*, ~/.agents/skills/*
+    .ai/RULES.md             -> ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md
+    .ai/claude/settings.json -> ~/.claude/settings.json
+    .ai/codex/config.toml    -> ~/.codex/config.toml (+ trust entry for the workspace)
+    .ai/agents/*.md          -> ~/.claude/agents/*.md, ~/.codex/agents/*.toml
+    .ai/skills/*/            -> ~/.claude/skills/*, ~/.agents/skills/*
+    .ai/workflows/*/         -> ~/.claude/skills/*, ~/.agents/skills/*
 
 Usage:
     render.py [--home DIR] [--workspace DIR]   render for real
@@ -26,7 +26,7 @@ import tempfile
 import tomllib
 from pathlib import Path
 
-HARNESS = Path(__file__).resolve().parent.parent / "harness"
+HARNESS = Path(__file__).resolve().parent.parent / ".ai"
 
 # Frontmatter keys Claude Code understands in a subagent file. Anything else is harness-only.
 CLAUDE_AGENT_KEYS = {
@@ -71,7 +71,7 @@ def render_agent(src: Path, models: dict) -> tuple[str, str, str]:
         raise ValueError(f"{src}: description must be one line (<=1024 chars)")
     profile_name = meta.get("model", "inherit")
     if profile_name not in models:
-        raise ValueError(f"{src}: model profile {profile_name!r} not in harness/models.json")
+        raise ValueError(f"{src}: model profile {profile_name!r} not in .ai/models.json")
     profile = models[profile_name]
 
     claude = {k: v for k, v in meta.items() if k in CLAUDE_AGENT_KEYS}

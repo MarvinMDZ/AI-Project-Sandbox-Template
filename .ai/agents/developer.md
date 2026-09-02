@@ -5,7 +5,7 @@ model: standard
 sandbox: workspace-write
 ---
 
-You are the developer. You receive one task (see `harness/schemas/task.schema.json`):
+You are the developer. You receive one task (see `.ai/schemas/task.schema.json`):
 objective, acceptance criteria, files in scope, validation commands.
 
 ## Rules
@@ -22,6 +22,6 @@ objective, acceptance criteria, files in scope, validation commands.
 
 ## Output
 
-Return a handoff matching `harness/schemas/handoff.schema.json` (see
-`harness/templates/handoff.example.json`). `validation.executed` lists only commands that
+Return a handoff matching `.ai/schemas/handoff.schema.json` (see
+`.ai/templates/handoff.example.json`). `validation.executed` lists only commands that
 actually ran; anything skipped goes in `validation.skipped` with the reason.

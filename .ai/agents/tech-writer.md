@@ -17,7 +17,7 @@ the user stated. Never document intended or unverified work as done.
 
 - `docs/STATUS.md`: current phase, done, in progress, next, open blockers. Replace stale
   lines; keep it short.
-- `docs/DECISIONS.md`: append a `DEC-###` entry from `harness/templates/decision.md`
+- `docs/DECISIONS.md`: append a `DEC-###` entry from `.ai/templates/decision.md`
   for every decision in the handoff; never rewrite past entries.
 - `docs/SETUP.md`: verified commands and requirements only.
 - `docs/PROJECT.md`: what the system is now; not a changelog.

@@ -11,7 +11,7 @@ model_reasoning_effort = "medium"
 network_access = true
 
 [agents]
-# Custom roles are auto-discovered from $CODEX_HOME/agents/*.toml (rendered from harness/agents/).
+# Custom roles are auto-discovered from $CODEX_HOME/agents/*.toml (rendered from .ai/agents/).
 enabled = true
 max_concurrent_threads_per_session = 4
 

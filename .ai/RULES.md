@@ -53,7 +53,7 @@ Understand, then scope, then the smallest coherent change, then validate, then r
 
 - Delegate only when a specialist adds value. Give it the minimum context: paths, the plan
   excerpt, acceptance criteria. Never the whole repository or the whole conversation.
-- Every delegated task ends with a handoff that matches `harness/schemas/handoff.schema.json`:
+- Every delegated task ends with a handoff that matches `.ai/schemas/handoff.schema.json`:
   `status`, `summary`, `files_changed`, `validation`, `documentation_impact`, `decisions`,
   `blockers`, `follow_up`.
 - Project documentation (`docs/`) is updated only from verified state, by the `tech-writer`

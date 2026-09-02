@@ -7,7 +7,7 @@ description: Execute the next task of an approved plan end to end - delegate to 
 
 Input: a plan id (`P###`) and optionally a task id. Default: the first task not done.
 
-1. **Build the task** as `harness/schemas/task.schema.json` from the plan: objective,
+1. **Build the task** as `.ai/schemas/task.schema.json` from the plan: objective,
    acceptance criteria, files, validation, risk, context (relevant `DEC-###`, docs).
 2. **Delegate** to the `developer` agent with that task only. Do not forward the whole
    conversation or repository.

@@ -1,5 +1,5 @@
 {
-  "_comment": "Logical model profiles used by harness/agents/*.md (`model:` in frontmatter). Claude: alias (haiku|sonnet|opus|inherit) or a full model id. Codex: null = inherit the parent session's model, or set an explicit model id (e.g. gpt-5.4-mini) to override.",
+  "_comment": "Logical model profiles used by .ai/agents/*.md (`model:` in frontmatter). Claude: alias (haiku|sonnet|opus|inherit) or a full model id. Codex: null = inherit the parent session's model, or set an explicit model id (e.g. gpt-5.4-mini) to override.",
   "fast":      { "claude": "haiku",   "codex": null, "codex_reasoning_effort": "low" },
   "standard":  { "claude": "sonnet",  "codex": null, "codex_reasoning_effort": "medium" },
   "reasoning": { "claude": "opus",    "codex": null, "codex_reasoning_effort": "high" },

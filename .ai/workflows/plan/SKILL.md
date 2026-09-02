@@ -14,7 +14,7 @@ Input: the user's request. Output: `docs/plans/P###-<slug>.md` awaiting approval
 3. **Escalate** to the `architect` agent when the request changes system boundaries, data
    contracts, security-sensitive paths, public APIs, or needs a non-trivial migration.
    Record its recommendation as a decision in the plan.
-4. **Write the plan** from `harness/templates/plan.md`. Next id = highest `P###` in
+4. **Write the plan** from `.ai/templates/plan.md`. Next id = highest `P###` in
    `docs/plans/` + 1. Every task has: objective, files, acceptance criteria, validation
    command, risk. Tasks are small enough for one `developer` run each.
 5. **Stop.** Present the plan summary and ask for approval. Do not implement.

@@ -26,8 +26,8 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
   Dockerfile            Node 22, pnpm, Python 3 + uv, git, gh, cloudflared, Claude Code, Codex
   managed-settings.json Claude Code hard policies (secret files denied), not overridable
   post-start.sh         every start: SSH keys, git trust, harness render, gh, cloudflared
-  render.py             harness/ -> ~/.claude, ~/.codex, ~/.agents (single source of truth)
-harness/
+  render.py             .ai/ -> ~/.claude, ~/.codex, ~/.agents (single source of truth)
+.ai/
   RULES.md              global rules for both CLIs
   agents/               architect, developer, reviewer, qa, tech-writer
   workflows/            /plan /implement /verify /review /commit /docs-sync
@@ -45,7 +45,7 @@ AGENTS.md  CLAUDE.md    project instructions (Codex native; Claude imports AGENT
 | Concern                                                | Mechanism                                                                        | To change it                                                          |
 |--------------------------------------------------------|----------------------------------------------------------------------------------|-----------------------------------------------------------------------|
 | Tool versions                                          | Pinned by build args in `devcontainer.json`; auto-update disabled                | edit the arg, rebuild                                                 |
-| Agent config (rules, agents, skills, settings)         | `harness/` rendered into the container on every start; managed dirs wiped first | edit `harness/`, run `python3 .devcontainer/render.py` or restart     |
+| Agent config (rules, agents, skills, settings)         | `.ai/` rendered into the container on every start; managed dirs wiped first | edit `.ai/`, run `python3 .devcontainer/render.py` or restart     |
 | Hard policies                                          | `/etc/claude-code/managed-settings.json` baked into the image                    | edit `.devcontainer/managed-settings.json`, rebuild                   |
 | Credentials, sessions, history                         | Named volumes `sandbox-claude`, `sandbox-codex`, `sandbox-gh`, `sandbox-history` | `docker volume rm <name>` to forget a login                           |
 | Host config (`~/.claude`, `~/.codex`, plugins, skills) | never mounted                                                                    | -                                                                     |
@@ -75,7 +75,7 @@ The token is visible to processes inside the container, including the agents.
 
 ## Harness
 
-`harness/README.md` explains the mapping and how to add agents, workflows and skills. Short
+`.ai/README.md` explains the mapping and how to add agents, workflows and skills. Short
 version: one Markdown file per agent, one `SKILL.md` per workflow or skill, and the same file
 serves both Claude Code and Codex. `python3 .devcontainer/render.py --check` validates.
 

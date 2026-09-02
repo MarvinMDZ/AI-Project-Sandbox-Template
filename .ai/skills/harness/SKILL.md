@@ -5,21 +5,21 @@ description: How this project's agent harness works and how to change it - add o
 
 # Harness maintenance
 
-`harness/` is the single source of truth; `.devcontainer/render.py` projects it into
+`.ai/` is the single source of truth; `.devcontainer/render.py` projects it into
 `~/.claude`, `~/.codex` and `~/.agents/skills` on every container start. Read
-`harness/README.md` for the full mapping.
+`.ai/README.md` for the full mapping.
 
 ## Add or change
 
 | What            | Where                                   | Format                                              |
 |-----------------|-----------------------------------------|-----------------------------------------------------|
-| global rule     | `harness/RULES.md`                      | Markdown, keep it short; it loads into every session|
-| agent           | `harness/agents/<name>.md`              | flat frontmatter (`name`, `description`, `model`, `tools`, `sandbox`) + system prompt |
-| workflow        | `harness/workflows/<name>/SKILL.md`     | Agent Skills `SKILL.md`; invoked as `/<name>` or `$<name>` |
-| skill           | `harness/skills/<name>/SKILL.md`        | same; may bundle scripts and reference files        |
-| model profile   | `harness/models.json`                   | `fast` / `standard` / `reasoning` / `inherit`       |
-| Claude-only     | `harness/claude/settings.json`          | permissions, hooks, env                             |
-| Codex-only      | `harness/codex/config.toml`             | approval, sandbox, MCP servers                      |
+| global rule     | `.ai/RULES.md`                      | Markdown, keep it short; it loads into every session|
+| agent           | `.ai/agents/<name>.md`              | flat frontmatter (`name`, `description`, `model`, `tools`, `sandbox`) + system prompt |
+| workflow        | `.ai/workflows/<name>/SKILL.md`     | Agent Skills `SKILL.md`; invoked as `/<name>` or `$<name>` |
+| skill           | `.ai/skills/<name>/SKILL.md`        | same; may bundle scripts and reference files        |
+| model profile   | `.ai/models.json`                   | `fast` / `standard` / `reasoning` / `inherit`       |
+| Claude-only     | `.ai/claude/settings.json`          | permissions, hooks, env                             |
+| Codex-only      | `.ai/codex/config.toml`             | approval, sandbox, MCP servers                      |
 | hard policy     | `.devcontainer/managed-settings.json`   | Claude managed settings; needs image rebuild        |
 
 Remove = delete the file or directory. Nothing else references it.
