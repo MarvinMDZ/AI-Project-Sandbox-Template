@@ -9,7 +9,6 @@ PASS=0 WARN=0 FAIL=0
 pass() { printf '[PASS] %s\n' "$1"; PASS=$((PASS + 1)); }
 warn() { printf '[WARN] %s\n' "$1"; WARN=$((WARN + 1)); }
 fail() { printf '[FAIL] %s\n' "$1"; FAIL=$((FAIL + 1)); }
-count() { local dir="$1"; shift; find "$dir" -mindepth 1 -maxdepth 1 "$@" 2>/dev/null | wc -l; }
 
 echo "## Tools"
 for tool in node pnpm python3 uv git gh docker cloudflared claude codex jq rg fd; do
