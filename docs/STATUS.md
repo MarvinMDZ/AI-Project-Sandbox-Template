@@ -16,7 +16,7 @@ none
 
 ## Next
 
-- Fill `docs/PROJECT.md` and `docs/SETUP.md`.
+- `/bootstrap`: fill `AGENTS.md` and `docs/` from the repository.
 - First plan: `/plan <request>`.
 
 ## Blockers

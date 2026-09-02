@@ -17,7 +17,8 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
    gh auth login               # or set GH_TOKEN on the host
    bash .devcontainer/healthcheck.sh   # tools, isolation, harness, logins
    ```
-3. Fill `AGENTS.md`, `docs/PROJECT.md`, `docs/SETUP.md`. Start work with `/plan <request>`.
+3. `/bootstrap` (Codex: `$bootstrap`) fills `AGENTS.md` and `docs/` from the repository, dates
+   `DEC-001` and runs the healthcheck. Then start work with `/plan <request>`.
 
 ## What is inside
 
@@ -32,7 +33,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
 .ai/
   RULES.md              global rules for both CLIs, baked into the image (rebuild to change)
   agents/               architect, developer, reviewer, qa, tech-writer
-  workflows/            /plan /implement /verify /review /commit /docs-sync
+  workflows/            /bootstrap /plan /implement /verify /review /commit /docs-sync
   skills/               reusable know-how (harness maintenance)
   schemas/ templates/   task + handoff schemas, plan / decision / handoff templates
   models.json           logical model profiles -> Claude alias / Codex model + effort
