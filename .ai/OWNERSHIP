@@ -32,12 +32,14 @@ template .devcontainer/devcontainer.json
 template .devcontainer/healthcheck.sh
 template .devcontainer/managed-settings.json
 template .devcontainer/post-start.sh
+template .devcontainer/prebuilt
 template .devcontainer/render.py
 template .devcontainer/test_render.py
 template .dockerignore
 template .editorconfig
 template .gitattributes
 template .github/workflows/ci.yml
+template .github/workflows/publish-image.yml
 template .markdownlint.yaml
 project .devcontainer/project.sh
 project .env.example

@@ -31,6 +31,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
   healthcheck.sh        tools, isolation, harness render, logins; CI runs it after the build
   render.py             .ai/ -> ~/.claude, ~/.codex, ~/.agents (single source of truth)
   project.sh            your tools, run as root at the end of the image build; the rest is the template's
+  prebuilt/             second configuration: pull the published image instead of building
 .ai/
   RULES.md              global rules for both CLIs, baked into the image (rebuild to change)
   agents/               architect, developer, reviewer, qa, tech-writer
@@ -42,7 +43,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
   state/                current-task.md, checkpoint of an unfinished task (git-ignored)
 docs/                   PROJECT, SETUP, STATUS, DECISIONS, plans/
 AGENTS.md  CLAUDE.md    project instructions (Codex native; Claude imports AGENTS.md)
-.github/                CI (harness check, shell and Python lint, devcontainer build), PR and issue templates
+.github/                CI (harness check, shell and Python lint, devcontainer build), image publish on release tags, PR and issue templates
 ```
 
 ## How isolation works
@@ -50,7 +51,7 @@ AGENTS.md  CLAUDE.md    project instructions (Codex native; Claude imports AGENT
 | Concern                                                | Mechanism                                                                        | To change it                                                          |
 |--------------------------------------------------------|----------------------------------------------------------------------------------|-----------------------------------------------------------------------|
 | Tool versions                                          | Pinned by build args in `devcontainer.json`; auto-update disabled                | edit the arg, rebuild                                                 |
-| Global rules                                           | `.ai/RULES.md` baked into the image as `/etc/claude-code/CLAUDE.md` and `/etc/codex/AGENTS.md`, root-owned, read-only | edit `.ai/RULES.md`, rebuild                                          |
+| Global rules                                           | `.ai/RULES.md` baked into the image as `/etc/claude-code/CLAUDE.md` and `/etc/codex/AGENTS.md`, root-owned, read-only | propose upstream; `/harness-update`, then rebuild (or pin the release with the prebuilt image) |
 | Agent config (agents, skills, settings)                | `.ai/` rendered into the container on every start; managed dirs wiped first | edit `.ai/`, run `python3 .devcontainer/render.py` or restart     |
 | Hard policies                                          | `/etc/claude-code/managed-settings.json` baked into the image                    | edit `.devcontainer/managed-settings.json`, rebuild                   |
 | Credentials, sessions, history                         | Named volumes `sandbox-claude`, `sandbox-codex`, `sandbox-gh`, `sandbox-history` | `docker volume rm <name>` to forget a login                           |
@@ -119,8 +120,9 @@ bloated conversation.
   from the template repository and restores exactly the paths its `.ai/OWNERSHIP` lists as the
   template's, never yours; review the diff, then *Rebuild Container* when the image inputs
   changed. `healthcheck.sh` prints the release you are on (`.ai/TEMPLATE_VERSION`).
-- Global rules: edit `.ai/RULES.md`, then *Rebuild Container*. Until then `healthcheck.sh`
-  warns that the image copy is stale.
+- Global rules: `.ai/RULES.md` is the template's. In a project, propose the change upstream
+  and receive it with `/harness-update`; in the template repository, edit and *Rebuild
+  Container*. Until the image matches, `healthcheck.sh` warns that the image copy is stale.
 - Claude Code / Codex / pnpm / uv: `.devcontainer/devcontainer.json` build args, then
   *Rebuild Container*. `stable` and `latest` channels resolve at build time; use an exact
   version for full reproducibility.
@@ -130,8 +132,21 @@ bloated conversation.
 ## Releasing the template
 
 For maintainers of the template repository: set `.ai/TEMPLATE_VERSION` to the new version,
-commit, tag that commit `vX.Y.Z` (annotated) and push the tag. Projects pick it up with
-`/harness-update`. Files a release removes stay in projects; name them in the release notes.
+commit, tag that commit `vX.Y.Z` (annotated) and push the tag. Bump the tag in
+`.devcontainer/prebuilt/devcontainer.json` in the same commit; the tag then runs
+`publish-image.yml`, which builds, checks and publishes
+`ghcr.io/marvinmdz/ai-project-sandbox:vX.Y.Z` (and `latest`) and proves the prebuilt
+configuration pulls it. Projects pick it up with `/harness-update`. Files a release removes
+stay in projects; name them in the release notes.
+
+## Prebuilt image
+
+`.devcontainer/prebuilt/devcontainer.json` pulls the image the template published for the
+release in `.ai/TEMPLATE_VERSION` instead of building it: choose it in *Reopen in Container*.
+The package is private until its owner makes it public in the package settings; while private,
+run `docker login ghcr.io` on the host with a token that has `read:packages`. A pulled image
+does not run `.devcontainer/project.sh`; projects with their own tools keep the build
+configuration.
 
 ## Requirements on the host
 

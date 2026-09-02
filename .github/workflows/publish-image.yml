@@ -1,0 +1,67 @@
+name: publish-image
+
+# A release tag builds the sandbox image, checks it, publishes it to GHCR and then proves that
+# the prebuilt configuration can pull it. Only the template repository publishes: projects
+# created from the template carry this file, and the guard keeps it inert there.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    name: build, check and publish the sandbox image
+    if: github.repository == 'MarvinMDZ/AI-Project-Sandbox-Template'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      # The tag names the release; the version file and the prebuilt pin must agree with it.
+      - run: |
+          set -ex
+          test "v$(tr -d '[:space:]' < .ai/TEMPLATE_VERSION)" = "$GITHUB_REF_NAME"
+          grep -q "ai-project-sandbox:$GITHUB_REF_NAME\"" .devcontainer/prebuilt/devcontainer.json
+      # devcontainer.json bind-mounts ~/.ssh read-only (Docker refuses a missing source path).
+      - run: mkdir -p ~/.ssh && ssh-keygen -q -t ed25519 -N "" -f ~/.ssh/id_ed25519
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Pushed only after runCmd succeeds: a failing healthcheck publishes nothing.
+      - uses: devcontainers/ci@v0.3
+        with:
+          imageName: ghcr.io/marvinmdz/ai-project-sandbox
+          imageTag: ${{ github.ref_name }},latest
+          push: always
+          runCmd: bash .devcontainer/healthcheck.sh
+
+  prebuilt:
+    name: a project pulls the published image
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir -p ~/.ssh && ssh-keygen -q -t ed25519 -N "" -f ~/.ssh/id_ed25519
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # The image metadata must bring the volumes, env, init and post-start.sh on its own.
+      - uses: devcontainers/ci@v0.3
+        with:
+          configFile: .devcontainer/prebuilt/devcontainer.json
+          push: never
+          runCmd: |
+            set -ex
+            bash .devcontainer/healthcheck.sh
+            test -f "$HOME/.ssh/id_ed25519"
+            test "$(id -un)" = node

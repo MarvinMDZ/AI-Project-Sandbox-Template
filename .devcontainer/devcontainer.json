@@ -20,8 +20,9 @@
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
   "remoteUser": "node",
-  // PID 1 reaps zombies left by background processes (cloudflared, dev servers).
-  "runArgs": ["--init"],
+  // PID 1 reaps zombies left by background processes (cloudflared, dev servers). A portable
+  // property rather than runArgs, so the published image carries it in its metadata.
+  "init": true,
   "containerEnv": {
     "DEVCONTAINER": "true",
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",

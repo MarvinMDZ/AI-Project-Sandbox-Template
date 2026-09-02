@@ -34,7 +34,9 @@ Credentials, sessions and history are never touched.
 ## Layout
 
 - `RULES.md`: global rules loaded into every session of both CLIs. Baked into the image by the
-  Dockerfile, root-owned and read-only inside the container; a change needs *Rebuild Container*.
+  Dockerfile, root-owned and read-only inside the container. Template-owned: a project proposes
+  a change upstream and receives it with `/harness-update`; applying it needs *Rebuild
+  Container* (or, with the prebuilt image, the matching release).
 - `agents/`: specialist roles. One Markdown file per agent: flat `key: value` frontmatter + system prompt.
   - `name`, `description` (one line): required.
   - `model`: profile from `models.json` (`fast` | `standard` | `reasoning` | `inherit`).

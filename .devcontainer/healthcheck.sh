@@ -58,7 +58,7 @@ fi
 if cmp -s "$ROOT/.ai/RULES.md" /etc/claude-code/CLAUDE.md; then
   pass "image rules match .ai/RULES.md"
 else
-  warn "image rules differ from .ai/RULES.md: rebuild the container to apply the edit"
+  warn "image rules differ from .ai/RULES.md: rebuild the container, or with the prebuilt image pin the release that matches .ai/TEMPLATE_VERSION"
 fi
 if [ -f "$ROOT/.ai/TEMPLATE_VERSION" ]; then
   pass "template version $(tr -d '[:space:]' < "$ROOT/.ai/TEMPLATE_VERSION") (/harness-update moves it)"
