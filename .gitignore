@@ -1,0 +1,27 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# dependencies and build output
+node_modules/
+build/
+out/
+.venv/
+__pycache__/
+*.pyc
+
+# tool state
+.claude/settings.local.json
+.codex/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+coverage/
+
+# editors and OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,32 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  harness:
+    name: harness renders and validates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 .devcontainer/render.py --check
+
+  devcontainer:
+    name: devcontainer image builds
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: devcontainers/ci@v0.3
+        with:
+          push: never
+          runCmd: |
+            claude --version
+            codex --version
+            gh --version
+            cloudflared --version
+            uv --version
+            pnpm --version
+            docker --version
+            ls ~/.claude/agents ~/.claude/skills ~/.codex/agents ~/.agents/skills

@@ -1,0 +1,63 @@
+{
+  "name": "sandbox",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "${localEnv:TZ:Europe/Madrid}",
+      // Claude Code: "stable" | "latest" | exact version (e.g. "2.1.211"). Native installer, auto-update off.
+      "CLAUDE_CODE_VERSION": "stable",
+      // Codex CLI: npm dist-tag or exact version.
+      "CODEX_VERSION": "latest",
+      "PNPM_VERSION": "10",
+      // uv: "" = latest, or an exact version (e.g. "0.8.22").
+      "UV_VERSION": ""
+    }
+  },
+  "features": {
+    // docker + compose CLIs talking to the HOST daemon (the feature mounts the socket).
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "remoteUser": "node",
+  "containerEnv": {
+    "DEVCONTAINER": "true",
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "CODEX_HOME": "/home/node/.codex",
+    "DISABLE_AUTOUPDATER": "1",
+    "HISTFILE": "/commandhistory/.bash_history"
+  },
+  // The ONLY host state that crosses the boundary: authentication. Unset on the host => empty here,
+  // and ~/.bashrc unsets empty values so the CLIs fall back to their own login.
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+    "GH_TOKEN": "${localEnv:GH_TOKEN}",
+    "TUNNEL_TOKEN": "${localEnv:CLOUDFLARE_TUNNEL_TOKEN}"
+  },
+  // Volumes hold SESSION STATE only (credentials, history, caches). Fixed names => shared by every
+  // project on this machine: log in once. No config lives here: render.py rewrites it on each start.
+  "mounts": [
+    "source=sandbox-claude,target=/home/node/.claude,type=volume",
+    "source=sandbox-codex,target=/home/node/.codex,type=volume",
+    "source=sandbox-gh,target=/home/node/.config/gh,type=volume",
+    "source=sandbox-history,target=/commandhistory,type=volume",
+    // Host SSH keys, read-only staging dir. post-start.sh copies them into ~/.ssh with 600 perms.
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/run/host-ssh,type=bind,readonly"
+  ],
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "openai.chatgpt",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker",
+        "editorconfig.editorconfig"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.eol": "\n"
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status": "completed",
+  "summary": "Added bounded retry with exponential backoff for HTTP 429 in the API client.",
+  "files_changed": ["src/client.py", "tests/test_client.py"],
+  "validation": {
+    "executed": ["uv run pytest tests/test_client.py"],
+    "passed": true,
+    "skipped": ["uv run mypy src (not required for this task)"],
+    "notes": "14 passed in 0.8s"
+  },
+  "documentation_impact": "none",
+  "decisions": [],
+  "blockers": [],
+  "follow_up": null
+}

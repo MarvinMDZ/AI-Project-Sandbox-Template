@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "harness/schemas/handoff.schema.json",
+  "title": "Handoff",
+  "description": "What every delegated agent returns when it finishes, blocks or fails.",
+  "type": "object",
+  "required": ["status", "summary", "files_changed", "validation", "documentation_impact", "decisions", "blockers", "follow_up"],
+  "additionalProperties": false,
+  "properties": {
+    "status": { "enum": ["completed", "blocked", "failed"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "files_changed": { "type": "array", "items": { "type": "string" } },
+    "validation": {
+      "type": "object",
+      "required": ["executed", "passed"],
+      "additionalProperties": false,
+      "properties": {
+        "executed": { "type": "array", "items": { "type": "string" }, "description": "Commands actually run in this session." },
+        "passed": { "type": "boolean" },
+        "skipped": { "type": "array", "items": { "type": "string" }, "description": "Checks not run, with the reason." },
+        "notes": { "type": "string" }
+      }
+    },
+    "documentation_impact": { "enum": ["none", "update_required"] },
+    "decisions": { "type": "array", "items": { "type": "string" }, "description": "Decisions taken or required, one line each." },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "follow_up": { "type": ["string", "null"] }
+  }
+}

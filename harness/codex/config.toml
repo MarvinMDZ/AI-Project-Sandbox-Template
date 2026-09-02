@@ -1,0 +1,21 @@
+# Codex CLI user-level config for the sandbox.
+# Rendered to $CODEX_HOME/config.toml on every start; render.py appends a
+# [projects."<workspace>"] trust entry so the project's own .codex/ layer loads.
+
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"
+
+[sandbox_workspace_write]
+# The container is the sandbox; agents need the network for pnpm, uv, gh.
+network_access = true
+
+[agents]
+# Custom roles are auto-discovered from $CODEX_HOME/agents/*.toml (rendered from harness/agents/).
+enabled = true
+max_concurrent_threads_per_session = 4
+
+# MCP servers shared by every project go here:
+# [mcp_servers.example]
+# command = "npx"
+# args = ["-y", "some-mcp-server"]
