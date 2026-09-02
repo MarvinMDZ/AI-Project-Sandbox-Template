@@ -178,5 +178,84 @@ class ValidationAndAtomicityTests(unittest.TestCase):
         self.assertEqual(counts["skills"], workflows)
 
 
+class VerifyTests(unittest.TestCase):
+    """verify() against a home rendered from a temporary copy of the repository's .ai/."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.harness = self.tmp / ".ai"
+        shutil.copytree(render.HARNESS, self.harness)
+        self.addCleanup(setattr, render, "HARNESS", render.HARNESS)
+        self.addCleanup(setattr, render, "CODEX_IMAGE_RULES", render.CODEX_IMAGE_RULES)
+        render.HARNESS = self.harness
+        self.home = self.tmp / "home"
+        self.manifest = render.build(self.home)
+        render.install(self.home, self.manifest)
+
+    def run_verify(self) -> tuple[set[str], int]:
+        findings = render.verify(self.home, self.manifest)
+        return {f.status for f in findings}, render.exit_code(findings)
+
+    def test_fresh_install_verifies_clean(self):
+        statuses, rc = self.run_verify()
+        self.assertLessEqual(statuses, {"skipped"})
+        self.assertEqual(rc, 0)
+
+    def test_missing_file_is_broken(self):
+        (self.home / ".claude" / "settings.json").unlink()
+        statuses, rc = self.run_verify()
+        self.assertIn("missing", statuses)
+        self.assertEqual(rc, 1)
+
+    def test_edited_settings_is_drift(self):
+        path = self.home / ".claude" / "settings.json"
+        path.write_text(path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+        statuses, rc = self.run_verify()
+        self.assertIn("differs", statuses)
+        self.assertEqual(rc, 2)
+
+    def test_extra_agent_and_edited_skill_are_drift(self):
+        (self.home / ".claude" / "agents" / "stray.md").write_text("---\nname: stray\n---\n", encoding="utf-8")
+        skill = next(p for p in (self.home / ".claude" / "skills").iterdir())
+        (skill / "SKILL.md").write_text("changed", encoding="utf-8")
+        (self.home / ".claude" / "commands").mkdir()
+        (self.home / ".claude" / "commands" / "old.md").write_text("x", encoding="utf-8")
+        statuses, rc = self.run_verify()
+        self.assertTrue({"extra", "differs"} <= statuses)
+        self.assertEqual(rc, 2)
+
+    def test_hand_written_rules_files_are_broken(self):
+        (self.home / ".codex" / "AGENTS.override.md").write_text("rogue rules", encoding="utf-8")
+        (self.home / ".claude" / "CLAUDE.md").write_text("rogue rules", encoding="utf-8")
+        statuses, rc = self.run_verify()
+        self.assertIn("forbidden", statuses)
+        self.assertNotIn("extra", statuses)  # reported once, as forbidden
+        self.assertEqual(rc, 1)
+
+    def test_rules_symlink_is_skipped_when_the_image_rules_are_absent(self):
+        render.CODEX_IMAGE_RULES = self.tmp / "no-such-rules.md"
+        manifest = render.build(self.home)
+        render.install(self.home, manifest)
+        findings = render.verify(self.home, manifest)
+        self.assertEqual([f.status for f in findings], ["skipped"])
+        self.assertEqual(render.exit_code(findings), 0)
+
+    def test_rules_symlink_is_verified_when_the_image_rules_exist(self):
+        rules = self.tmp / "rules.md"
+        rules.write_text("# rules\n", encoding="utf-8")
+        render.CODEX_IMAGE_RULES = rules
+        manifest = render.build(self.home)
+        try:
+            render.install(self.home, manifest)
+        except OSError as exc:  # Windows without Developer Mode cannot create symlinks
+            self.skipTest(f"symlinks unavailable here: {exc}")
+        self.assertEqual(render.exit_code(render.verify(self.home, manifest)), 0)
+        (self.home / ".codex" / "AGENTS.md").unlink()
+        findings = render.verify(self.home, manifest)
+        self.assertEqual([f.status for f in findings], ["missing"])
+        self.assertEqual(render.exit_code(findings), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -87,7 +87,8 @@ The token is visible to processes inside the container, including the agents.
 
 `.ai/README.md` explains the mapping and how to add agents, workflows and skills. Short
 version: one Markdown file per agent, one `SKILL.md` per workflow or skill, and the same file
-serves both Claude Code and Codex. `python3 .devcontainer/render.py --check` validates.
+serves both Claude Code and Codex. `python3 .devcontainer/render.py --check` validates the sources;
+`python3 .devcontainer/render.py --verify` compares the running container with them.
 
 ## Sessions
 

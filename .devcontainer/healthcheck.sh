@@ -50,52 +50,27 @@ else
 fi
 
 echo "## Harness (.ai/)"
-if python3 "$ROOT/.devcontainer/render.py" --check >/dev/null 2>&1; then
-  pass "render.py --check"
-else
-  fail "render.py --check failed; run it to see why"
-fi
 if [ -f /etc/claude-code/CLAUDE.md ] && [ ! -w /etc/claude-code/CLAUDE.md ] \
-   && [ -f /etc/codex/AGENTS.md ] && [ ! -w /etc/codex/AGENTS.md ] \
-   && [ "$(readlink "$HOME/.codex/AGENTS.md")" = /etc/codex/AGENTS.md ]; then
-  pass "global rules baked into the image, read-only, linked for Codex"
+   && [ -f /etc/codex/AGENTS.md ] && [ ! -w /etc/codex/AGENTS.md ]; then
+  pass "global rules baked into the image, read-only"
 else
-  fail "global rules: /etc/claude-code/CLAUDE.md, /etc/codex/AGENTS.md or the ~/.codex/AGENTS.md link is missing or writable"
-fi
-if [ -e "$HOME/.codex/AGENTS.override.md" ]; then
-  fail "~/.codex/AGENTS.override.md exists: Codex reads it instead of the image rules (restart wipes it)"
+  fail "global rules: /etc/claude-code/CLAUDE.md or /etc/codex/AGENTS.md is missing or writable"
 fi
 if cmp -s "$ROOT/.ai/RULES.md" /etc/claude-code/CLAUDE.md; then
   pass "image rules match .ai/RULES.md"
 else
   warn "image rules differ from .ai/RULES.md: rebuild the container to apply the edit"
 fi
-want=$(count "$ROOT/.ai/agents" -name '*.md')
-got_claude=$(count "$HOME/.claude/agents" -name '*.md')
-got_codex=$(count "$HOME/.codex/agents" -name '*.toml')
-if [ "$want" -gt 0 ] && [ "$got_claude" -eq "$want" ] && [ "$got_codex" -eq "$want" ]; then
-  pass "$want agents rendered for Claude Code and Codex"
-else
-  fail "agents: .ai/ has $want, ~/.claude/agents has $got_claude, ~/.codex/agents has $got_codex"
-fi
-want=$(( $(count "$ROOT/.ai/skills" -type d) + $(count "$ROOT/.ai/workflows" -type d) ))
-got_claude=$(count "$HOME/.claude/skills" -type d)
-got_codex=$(count "$HOME/.agents/skills" -type d)
-if [ "$want" -gt 0 ] && [ "$got_claude" -eq "$want" ] && [ "$got_codex" -eq "$want" ]; then
-  pass "$want skills/workflows rendered for Claude Code and Codex"
-else
-  fail "skills: .ai/ has $want, ~/.claude/skills has $got_claude, ~/.agents/skills has $got_codex"
-fi
-if cmp -s "$ROOT/.ai/claude/settings.json" "$HOME/.claude/settings.json"; then
-  pass "$HOME/.claude/settings.json rendered from .ai/claude/settings.json"
-else
-  fail "$HOME/.claude/settings.json missing or stale: the harness render did not complete (see the container start log)"
-fi
-if grep -qs '^trust_level = "trusted"' "$HOME/.codex/config.toml"; then
-  pass "$HOME/.codex/config.toml rendered with the workspace trust entry"
-else
-  fail "$HOME/.codex/config.toml missing or without the workspace trust entry: the harness render did not complete"
-fi
+# Everything under $HOME is render.py's manifest: one --verify call replaces the old file counting,
+# the ~/.codex/AGENTS.md link check and the AGENTS.override.md check.
+out=$(python3 "$ROOT/.devcontainer/render.py" --verify --workspace "$ROOT" 2>&1); rc=$?
+case "$rc" in
+  0) pass "render.py --verify: ${out##*$'\n'}" ;;
+  2) warn "harness drift (a session or a hand edit changed a managed file; restart or run render.py):"
+     printf '%s\n' "$out" | sed 's/^/       /' ;;
+  *) fail "harness broken (render.py --verify exit $rc):"
+     printf '%s\n' "$out" | sed 's/^/       /' ;;
+esac
 
 echo "## Logins and host integration"
 if [ -f "$HOME/.claude/.credentials.json" ] || [ -n "${ANTHROPIC_API_KEY:-}" ]; then

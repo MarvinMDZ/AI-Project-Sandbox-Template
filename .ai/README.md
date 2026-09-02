@@ -18,6 +18,19 @@ Managed targets are deleted and rewritten. Anything installed by hand inside the
 (a skill, an agent, a setting) disappears on the next start unless it lives here.
 Credentials, sessions and history are never touched.
 
+## Vocabulary
+
+- **Managed targets**: the paths under the home directories that the harness owns and rewrites
+  on every start (the right-hand column of the table above). Anything else there is session
+  state and is never touched.
+- **Manifest**: what the harness expects every managed target to contain, derived from `.ai/`
+  alone. A render writes it; a verify compares against it.
+- **Render**: write the manifest into the managed targets (`render.py`, every container start).
+- **Verify**: compare the managed targets with the manifest without changing anything
+  (`render.py --verify`, run by `healthcheck.sh`). Verdicts: *verified*; *drift*, a session or a
+  hand edit changed something and the next start resets it; *broken*, something is missing or a
+  hand-written rules file shadows the image rules.
+
 ## Layout
 
 - `RULES.md`: global rules loaded into every session of both CLIs. Baked into the image by the
@@ -48,4 +61,6 @@ Credentials, sessions and history are never touched.
 
 `RULES.md` is the exception: it lives in the image, so *Rebuild Container* replaces step 2.
 
-`python3 .devcontainer/render.py --check` renders into a temp dir and validates (CI runs it).
+`python3 .devcontainer/render.py --check` renders into a temp dir and verifies it (CI runs it);
+`python3 .devcontainer/render.py --verify` compares your running container with `.ai/`
+(`healthcheck.sh` runs it).

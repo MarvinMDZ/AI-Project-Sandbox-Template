@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Render ./.ai into the Claude Code and Codex user-level config directories.
 
-.ai/ is the single source of truth. Everything this script manages is deleted and
-rewritten on every container start, so a removed agent, skill or rule leaves no trace.
-Session state (credentials, sessions, history, plugin caches) is never touched.
+.ai/ is the single source of truth. build() turns it into a manifest: every target this script
+owns under $HOME with its expected content. install() wipes the managed targets and writes the
+manifest; verify() compares a real home against it and reports drift. Session state (credentials,
+sessions, history, plugin caches) is never touched.
 
     .ai/RULES.md             -> baked into the image by the Dockerfile (/etc/claude-code/CLAUDE.md,
                                 /etc/codex/AGENTS.md); here only ~/.codex/AGENTS.md -> /etc/codex/AGENTS.md
@@ -15,11 +16,15 @@ Session state (credentials, sessions, history, plugin caches) is never touched.
 
 Usage:
     render.py [--home DIR] [--workspace DIR]   render for real
-    render.py --check                         render into a temp dir and validate (CI)
+    render.py --check [--workspace DIR]        render into a temp dir, verify it, list the files (CI)
+    render.py --verify [--home DIR] [--workspace DIR]
+                                              compare a rendered home with .ai/: exit 0 verified,
+                                              1 broken (missing or forbidden), 2 drift (differs or extra)
 """
 from __future__ import annotations
 
 import argparse
+import filecmp
 import json
 import re
 import shutil
@@ -27,6 +32,7 @@ import sys
 import tempfile
 import tomllib
 from pathlib import Path
+from typing import NamedTuple
 
 HARNESS = Path(__file__).resolve().parent.parent / ".ai"
 # Codex has no managed rules path; the image ships RULES.md here and $CODEX_HOME/AGENTS.md links to it.
@@ -47,6 +53,22 @@ AGENT_NAME = re.compile(r"[a-z0-9][a-z0-9-]*")
 CLAUDE_MANAGED = ["skills", "agents", "commands", "CLAUDE.md", "settings.json"]
 # AGENTS.override.md is wiped too: Codex would read it INSTEAD of the linked image rules.
 CODEX_MANAGED = ["agents", "prompts", "AGENTS.md", "AGENTS.override.md", "config.toml"]
+# Managed names the manifest never produces. Present after a render means someone wrote them by
+# hand; both shadow or duplicate the image rules, so verify() reports them as broken, not as drift.
+FORBIDDEN = (Path(".claude/CLAUDE.md"), Path(".codex/AGENTS.override.md"))
+
+
+class Symlink(NamedTuple):
+    target: Path
+
+
+class Finding(NamedTuple):
+    status: str  # missing | forbidden | differs | extra | skipped
+    path: str
+    detail: str = ""
+
+
+Manifest = dict[Path, str | Path | Symlink]
 
 
 def parse_frontmatter(text: str, src: Path) -> tuple[dict[str, str], str]:
@@ -109,14 +131,15 @@ def render_agent(src: Path, models: dict) -> tuple[str, str, str]:
     return meta["name"], claude_md, codex_toml
 
 
-def build(workspace: Path) -> dict[Path, str | Path]:
-    """Read and validate every source under .ai/. Returns {target relative to $HOME: file text, or a
-    directory to copy}. Touches nothing on disk, so a broken source cannot leave a half-rendered home."""
+def build(workspace: Path) -> Manifest:
+    """Read and validate every source under .ai/ and return the manifest: {target relative to $HOME:
+    file text, directory to copy, or Symlink}. Touches nothing on disk, so a broken source cannot
+    leave a half-rendered home."""
     models = {k: v for k, v in json.loads((HARNESS / "models.json").read_text(encoding="utf-8")).items()
               if not k.startswith("_")}
     if not (HARNESS / "RULES.md").is_file():
         raise FileNotFoundError(f"{HARNESS / 'RULES.md'}: missing; the image build copies it")
-    out: dict[Path, str | Path] = {}
+    out: Manifest = {}
 
     settings = (HARNESS / "claude" / "settings.json").read_text(encoding="utf-8")
     json.loads(settings)
@@ -126,6 +149,8 @@ def build(workspace: Path) -> dict[Path, str | Path]:
     config += f'\n[projects.{json.dumps(workspace.as_posix())}]\ntrust_level = "trusted"\n'
     tomllib.loads(config)
     out[Path(".codex/config.toml")] = config
+    # Codex only reads $CODEX_HOME/AGENTS.md; the image rules live in /etc, so link them.
+    out[Path(".codex/AGENTS.md")] = Symlink(CODEX_IMAGE_RULES)
 
     for group in ("skills", "workflows"):
         group_dir = HARNESS / group
@@ -153,8 +178,8 @@ def build(workspace: Path) -> dict[Path, str | Path]:
     return out
 
 
-def install(home: Path, outputs: dict[Path, str | Path]) -> None:
-    """Wipe the managed targets and write the validated outputs. Call only after build() succeeded."""
+def install(home: Path, manifest: Manifest) -> None:
+    """Wipe the managed targets and write the manifest. Call only after build() succeeded."""
     claude, codex, agents_skills = home / ".claude", home / ".codex", home / ".agents" / "skills"
     for base, names in ((claude, CLAUDE_MANAGED), (codex, CODEX_MANAGED)):
         base.mkdir(parents=True, exist_ok=True)
@@ -167,44 +192,133 @@ def install(home: Path, outputs: dict[Path, str | Path]) -> None:
     shutil.rmtree(agents_skills, ignore_errors=True)
     for d in (claude / "skills", claude / "agents", codex / "agents", agents_skills):
         d.mkdir(parents=True)
-    # Global rules are baked into the image: Claude Code loads /etc/claude-code/CLAUDE.md natively
-    # (a stale ~/.claude/CLAUDE.md was wiped above); Codex only reads $CODEX_HOME/AGENTS.md, so link it.
-    if CODEX_IMAGE_RULES.is_file():
-        (codex / "AGENTS.md").symlink_to(CODEX_IMAGE_RULES)
-    for rel, content in outputs.items():
+    for rel, content in manifest.items():
         target = home / rel
-        if isinstance(content, Path):
+        if isinstance(content, Symlink):
+            # Only where the image rules exist: elsewhere (CI runner, a Windows host running --check)
+            # the link would dangle, and verify() reports the entry as skipped instead of missing.
+            if content.target.is_file():
+                target.symlink_to(content.target)
+        elif isinstance(content, Path):
             shutil.copytree(content, target)
         else:
             target.write_text(content, encoding="utf-8")
 
 
-def render(home: Path, workspace: Path) -> dict[str, int]:
-    outputs = build(workspace)
-    install(home, outputs)
+def dir_differs(src: Path, dst: Path) -> bool:
+    """True unless dst holds exactly the files of src with identical bytes."""
+    src_files = {p.relative_to(src) for p in src.rglob("*") if p.is_file()}
+    dst_files = {p.relative_to(dst) for p in dst.rglob("*") if p.is_file()}
+    if src_files != dst_files:
+        return True
+    return any(not filecmp.cmp(src / p, dst / p, shallow=False) for p in src_files)
+
+
+def verify(home: Path, manifest: Manifest) -> list[Finding]:
+    """Compare a rendered home with the manifest without modifying anything. Reports entries that are
+    missing, forbidden (hand-written rules files), different, or extra inside the managed targets."""
+    findings: list[Finding] = []
+    for rel, content in manifest.items():
+        target = home / rel
+        if isinstance(content, Symlink):
+            if not content.target.is_file():
+                detail = f"target {content.target.as_posix()} absent on this host"
+                findings.append(Finding("skipped", rel.as_posix(), detail))
+            elif not target.is_symlink() or target.readlink() != content.target:
+                findings.append(Finding("missing", rel.as_posix(), f"symlink to {content.target}"))
+        elif isinstance(content, Path):
+            if not target.is_dir():
+                findings.append(Finding("missing", rel.as_posix()))
+            elif dir_differs(content, target):
+                findings.append(Finding("differs", rel.as_posix()))
+        elif not target.is_file():
+            findings.append(Finding("missing", rel.as_posix()))
+        elif target.read_text(encoding="utf-8") != content:
+            findings.append(Finding("differs", rel.as_posix()))
+    for rel in FORBIDDEN:
+        if (home / rel).exists():
+            findings.append(Finding("forbidden", rel.as_posix(), "hand-written rules file; shadows the image rules"))
+    known = set(manifest) | set(FORBIDDEN)
+    managed = [home / ".claude" / n for n in CLAUDE_MANAGED] + [home / ".codex" / n for n in CODEX_MANAGED]
+    managed.append(home / ".agents" / "skills")
+    for path in managed:
+        children = list(path.iterdir()) if path.is_dir() and not path.is_symlink() else [path]
+        for child in children:
+            rel = child.relative_to(home)
+            if rel not in known and (child.exists() or child.is_symlink()):
+                findings.append(Finding("extra", rel.as_posix(), "not produced by .ai/; the next start removes it"))
+    return findings
+
+
+def exit_code(findings: list[Finding]) -> int:
+    """0 verified; 1 broken (missing or forbidden: the render did not complete or was overridden);
+    2 drift (differs or extra: a session or a hand edit changed it; restart or render to reset)."""
+    statuses = {f.status for f in findings}
+    if statuses & {"missing", "forbidden"}:
+        return 1
+    if statuses & {"differs", "extra"}:
+        return 2
+    return 0
+
+
+def counts(manifest: Manifest) -> dict[str, int]:
     return {
-        "agents": sum(1 for p in outputs if p.parts[:2] == (".claude", "agents")),
-        "skills": sum(1 for p in outputs if p.parts[:2] == (".claude", "skills")),
+        "agents": sum(1 for p in manifest if p.parts[:2] == (".claude", "agents")),
+        "skills": sum(1 for p in manifest if p.parts[:2] == (".claude", "skills")),
     }
+
+
+def describe(manifest: Manifest) -> str:
+    c = counts(manifest)
+    return f"{c['agents']} agents, {c['skills']} skills/workflows"
+
+
+def render(home: Path, workspace: Path) -> dict[str, int]:
+    manifest = build(workspace)
+    install(home, manifest)
+    return counts(manifest)
+
+
+def print_findings(findings: list[Finding]) -> None:
+    for f in findings:
+        print(f"{f.status:<9} {f.path}" + (f"  ({f.detail})" if f.detail else ""))
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--home", type=Path, default=Path.home())
     parser.add_argument("--workspace", type=Path, default=Path.cwd())
-    parser.add_argument("--check", action="store_true", help="render into a temp dir and validate")
+    parser.add_argument("--check", action="store_true", help="render into a temp dir, verify it, list the files")
+    parser.add_argument("--verify", action="store_true", help="compare --home with .ai/ (exit 0, 1 broken, 2 drift)")
     args = parser.parse_args()
+    workspace = args.workspace.resolve()
 
     if args.check:
+        manifest = build(workspace)
         with tempfile.TemporaryDirectory() as tmp:
-            counts = render(Path(tmp), args.workspace.resolve())
-            for path in sorted(p for p in Path(tmp).rglob("*") if p.is_file()):
-                print(path.relative_to(tmp).as_posix())
-        print(f"harness OK: {counts['agents']} agents, {counts['skills']} skills/workflows")
+            home = Path(tmp)
+            install(home, manifest)
+            findings = verify(home, manifest)
+            for path in sorted(p for p in home.rglob("*") if p.is_file() or p.is_symlink()):
+                print(path.relative_to(home).as_posix())
+        print_findings(findings)
+        if exit_code(findings) != 0:
+            print("render.py: --check failed: install() and verify() disagree", file=sys.stderr)
+            return 1
+        print(f"harness OK: {describe(manifest)}")
         return 0
 
-    counts = render(args.home, args.workspace.resolve())
-    print(f"harness rendered from {HARNESS}: {counts['agents']} agents, {counts['skills']} skills/workflows")
+    if args.verify:
+        manifest = build(workspace)
+        findings = verify(args.home, manifest)
+        print_findings(findings)
+        rc = exit_code(findings)
+        print(f"harness {('verified', 'broken', 'drift')[rc]}: {describe(manifest)} in {args.home}")
+        return rc
+
+    manifest = build(workspace)
+    install(args.home, manifest)
+    print(f"harness rendered from {HARNESS}: {describe(manifest)}")
     return 0
 
 
