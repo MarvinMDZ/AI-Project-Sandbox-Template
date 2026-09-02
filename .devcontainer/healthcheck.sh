@@ -62,6 +62,9 @@ if [ -f /etc/claude-code/CLAUDE.md ] && [ ! -w /etc/claude-code/CLAUDE.md ] \
 else
   fail "global rules: /etc/claude-code/CLAUDE.md, /etc/codex/AGENTS.md or the ~/.codex/AGENTS.md link is missing or writable"
 fi
+if [ -e "$HOME/.codex/AGENTS.override.md" ]; then
+  fail "~/.codex/AGENTS.override.md exists: Codex reads it instead of the image rules (restart wipes it)"
+fi
 if cmp -s "$ROOT/.ai/RULES.md" /etc/claude-code/CLAUDE.md; then
   pass "image rules match .ai/RULES.md"
 else

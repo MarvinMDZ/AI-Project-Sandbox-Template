@@ -39,7 +39,8 @@ CLAUDE_AGENT_KEYS = {
 # ponytail: managed = wiped and rewritten. Not wiped: ~/.claude/plugins (enablement lives in
 # settings.json) and ~/.codex/skills (Codex keeps its bundled .system skills there).
 CLAUDE_MANAGED = ["skills", "agents", "commands", "CLAUDE.md", "settings.json"]
-CODEX_MANAGED = ["agents", "prompts", "AGENTS.md", "config.toml"]
+# AGENTS.override.md is wiped too: Codex would read it INSTEAD of the linked image rules.
+CODEX_MANAGED = ["agents", "prompts", "AGENTS.md", "AGENTS.override.md", "config.toml"]
 
 
 def parse_frontmatter(text: str, src: Path) -> tuple[dict[str, str], str]:
