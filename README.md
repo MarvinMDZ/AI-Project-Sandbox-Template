@@ -37,6 +37,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
   schemas/ templates/   task + handoff schemas, plan / decision / handoff templates
   models.json           logical model profiles -> Claude alias / Codex model + effort
   claude/ codex/        tool-specific settings
+  state/                current-task.md, checkpoint of an unfinished task (git-ignored)
 docs/                   PROJECT, SETUP, STATUS, DECISIONS, plans/
 AGENTS.md  CLAUDE.md    project instructions (Codex native; Claude imports AGENTS.md)
 .github/                CI (harness check + devcontainer build), PR and issue templates
@@ -87,6 +88,14 @@ The token is visible to processes inside the container, including the agents.
 `.ai/README.md` explains the mapping and how to add agents, workflows and skills. Short
 version: one Markdown file per agent, one `SKILL.md` per workflow or skill, and the same file
 serves both Claude Code and Codex. `python3 .devcontainer/render.py --check` validates.
+
+## Sessions
+
+Both CLIs default to medium reasoning effort; `claude-hard` and `codex-hard` start a session at
+`xhigh` for architecture, concurrency or hard debugging. Claude auto memory is off: durable
+knowledge goes to `docs/`, and an unfinished task leaves a checkpoint in
+`.ai/state/current-task.md` (git-ignored) so a fresh session resumes from it instead of a
+bloated conversation.
 
 ## Updating
 

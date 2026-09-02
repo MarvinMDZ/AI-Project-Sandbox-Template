@@ -29,7 +29,7 @@ One paragraph. The measurable outcome, not the activity.
 - **Risk:** low | medium | high
 - **Files:** `path/to/file`
 - **Acceptance:** ...
-- **Validation:** `command`
+- **Validation:** `command` (fails when the acceptance is unmet; optional `=> marker` printed only on success)
 
 ### Phase validation
 

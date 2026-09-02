@@ -89,6 +89,9 @@ for v in ANTHROPIC_API_KEY OPENAI_API_KEY GH_TOKEN TUNNEL_TOKEN; do
   [ -z "${!v:-}" ] && unset "$v"
 done
 unset v
+# Deliberate escalation for hard problems; both CLIs default to medium effort.
+alias claude-hard='claude --effort xhigh'
+alias codex-hard='codex -c model_reasoning_effort=xhigh'
 BASHRC
 
 WORKDIR /workspaces

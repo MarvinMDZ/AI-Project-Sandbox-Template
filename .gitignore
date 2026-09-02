@@ -14,6 +14,7 @@ __pycache__/
 # tool state (.claude/ and .codex/ project config are tracked; personal overrides are not)
 .claude/settings.local.json
 CLAUDE.local.md
+.ai/state/
 .ruff_cache/
 .pytest_cache/
 .mypy_cache/

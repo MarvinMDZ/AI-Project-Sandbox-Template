@@ -34,6 +34,8 @@ Credentials, sessions and history are never touched.
 - `schemas/`: JSON Schemas for the structured artifacts agents exchange (task, handoff).
 - `templates/`: Markdown/JSON templates for plans, decisions and handoffs.
 - `claude/`, `codex/`: tool-specific configuration that has no common representation.
+- `state/`: git-ignored. `current-task.md` is the checkpoint an agent writes before clearing a
+  bloated session (goal, done, remaining, files, decisions, verification) and deletes when done.
 
 ## Change something
 

@@ -13,6 +13,7 @@ description: Prove that the current working tree meets its acceptance conditions
    - commands executed with pass/fail;
    - failing checks with the shortest decisive excerpt;
    - checks not run and why;
+   - acceptance criteria abandoned, each with its reason;
    - **Verified:** yes | partially | no.
 
 A claim without a command behind it is not a verification.
