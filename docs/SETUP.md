@@ -4,8 +4,8 @@ Verified commands only. If it is not confirmed to work, it does not belong here.
 
 ## Requirements
 
-Everything ships in the devcontainer (see `README.md`). Outside it: Node 22, pnpm, Python 3,
-uv, git, gh.
+Everything ships in the devcontainer (see `README.md`); `bash .devcontainer/healthcheck.sh`
+confirms it. Outside it: Node 22, pnpm, Python 3, uv, git, gh.
 
 ## Install
 

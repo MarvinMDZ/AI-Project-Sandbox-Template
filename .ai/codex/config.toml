@@ -6,6 +6,11 @@ approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 model_reasoning_effort = "medium"
 
+# No OS keyring in the container: credentials live in $CODEX_HOME/auth.json (the volume).
+cli_auth_credentials_store = "file"
+# The image pins the Codex version; a running container must not nag about or drift from it.
+check_for_update_on_startup = false
+
 [sandbox_workspace_write]
 # The container is the sandbox; agents need the network for pnpm, uv, gh.
 network_access = true

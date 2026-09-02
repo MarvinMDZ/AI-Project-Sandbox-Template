@@ -21,12 +21,4 @@ jobs:
       - uses: devcontainers/ci@v0.3
         with:
           push: never
-          runCmd: |
-            claude --version
-            codex --version
-            gh --version
-            cloudflared --version
-            uv --version
-            pnpm --version
-            docker --version
-            ls ~/.claude/agents ~/.claude/skills ~/.codex/agents ~/.agents/skills
+          runCmd: bash .devcontainer/healthcheck.sh

@@ -50,3 +50,4 @@ else
 fi
 
 echo "sandbox ready: $(claude --version 2>/dev/null | head -1) | codex $(codex --version 2>/dev/null | head -1)"
+echo "check it: bash .devcontainer/healthcheck.sh"

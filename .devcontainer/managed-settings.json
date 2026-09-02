@@ -10,10 +10,12 @@
       "Read(./.env)",
       "Read(./.env.local)",
       "Read(./**/.env)",
-      "Read(./**/.env.local)"
+      "Read(./**/.env.local)",
+      "Bash(sudo:*)"
     ]
   },
   "env": {
+    "DISABLE_UPDATES": "1",
     "DISABLE_AUTOUPDATER": "1"
   }
 }

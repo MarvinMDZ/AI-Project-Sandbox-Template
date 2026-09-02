@@ -15,6 +15,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
    claude                      # OAuth login, or set ANTHROPIC_API_KEY on the host
    codex login --device-auth   # or set OPENAI_API_KEY on the host
    gh auth login               # or set GH_TOKEN on the host
+   bash .devcontainer/healthcheck.sh   # tools, isolation, harness, logins
    ```
 3. Fill `AGENTS.md`, `docs/PROJECT.md`, `docs/SETUP.md`. Start work with `/plan <request>`.
 
@@ -24,8 +25,9 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
 .devcontainer/
   devcontainer.json     image build args (tool versions), volumes, host passthrough env
   Dockerfile            Node 22, pnpm, Python 3 + uv, git, gh, cloudflared, Claude Code, Codex
-  managed-settings.json Claude Code hard policies (secret files denied), not overridable
+  managed-settings.json Claude Code hard policies (secret files and sudo denied), not overridable
   post-start.sh         every start: SSH keys, git trust, harness render, gh, cloudflared
+  healthcheck.sh        tools, isolation, harness render, logins; CI runs it after the build
   render.py             .ai/ -> ~/.claude, ~/.codex, ~/.agents (single source of truth)
 .ai/
   RULES.md              global rules for both CLIs
@@ -53,6 +55,12 @@ AGENTS.md  CLAUDE.md    project instructions (Codex native; Claude imports AGENT
 
 Host environment variables passed through when set: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
 `GH_TOKEN`, `CLOUDFLARE_TUNNEL_TOKEN` (arrives as `TUNNEL_TOKEN`). Unset ones are dropped.
+
+The container is a hygiene boundary, not a security boundary: `docker` drives the host daemon
+and `sudo` works for you. Agents cannot escalate: the managed policy denies `sudo` to Claude
+Code, and Codex leaves its `workspace-write` sandbox only with your approval. A missing tool
+goes into the Dockerfile and a rebuild, never a hand install. Root shell when you need one:
+`docker exec -u root -it <container> bash`.
 
 ## GitHub, SSH, Docker
 

@@ -61,6 +61,7 @@ ENV HOME=/home/node \
     PATH=/home/node/.local/bin:${PATH} \
     CLAUDE_CONFIG_DIR=/home/node/.claude \
     CODEX_HOME=/home/node/.codex \
+    DISABLE_UPDATES=1 \
     DISABLE_AUTOUPDATER=1
 
 # --- Claude Code: native installer pinned by build arg (version | stable | latest)
