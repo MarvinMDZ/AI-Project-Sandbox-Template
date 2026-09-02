@@ -34,7 +34,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
 .ai/
   RULES.md              global rules for both CLIs, baked into the image (rebuild to change)
   agents/               architect, developer, reviewer, qa, tech-writer
-  workflows/            /bootstrap /plan /implement /verify /review /commit /docs-sync
+  workflows/            /bootstrap /plan /implement /verify /review /commit /docs-sync /harness-update
   skills/               reusable know-how (harness maintenance)
   schemas/ templates/   task + handoff schemas, plan / decision / handoff templates
   models.json           logical model profiles -> Claude alias / Codex model + effort
@@ -115,6 +115,10 @@ bloated conversation.
 
 ## Updating
 
+- Template release: `/harness-update [vX.Y.Z]` (Codex: `$harness-update`) fetches the release
+  from the template repository and restores exactly the paths its `.ai/OWNERSHIP` lists as the
+  template's, never yours; review the diff, then *Rebuild Container* when the image inputs
+  changed. `healthcheck.sh` prints the release you are on (`.ai/TEMPLATE_VERSION`).
 - Global rules: edit `.ai/RULES.md`, then *Rebuild Container*. Until then `healthcheck.sh`
   warns that the image copy is stale.
 - Claude Code / Codex / pnpm / uv: `.devcontainer/devcontainer.json` build args, then
@@ -122,6 +126,12 @@ bloated conversation.
   version for full reproducibility.
 - Base image: `node:24-bookworm` in the Dockerfile; pin a digest for byte-identical builds.
 - Docker feature `docker-outside-of-docker` is pinned to major `1`.
+
+## Releasing the template
+
+For maintainers of the template repository: set `.ai/TEMPLATE_VERSION` to the new version,
+commit, tag that commit `vX.Y.Z` (annotated) and push the tag. Projects pick it up with
+`/harness-update`. Files a release removes stay in projects; name them in the release notes.
 
 ## Requirements on the host
 

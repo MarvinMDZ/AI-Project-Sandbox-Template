@@ -7,6 +7,7 @@ source https://github.com/MarvinMDZ/AI-Project-Sandbox-Template.git
 template .ai/OWNERSHIP
 template .ai/README.md
 template .ai/RULES.md
+template .ai/TEMPLATE_VERSION
 template .ai/agents/architect.md
 template .ai/agents/developer.md
 template .ai/agents/qa.md
@@ -21,6 +22,7 @@ template .ai/templates
 template .ai/workflows/bootstrap
 template .ai/workflows/commit
 template .ai/workflows/docs-sync
+template .ai/workflows/harness-update
 template .ai/workflows/implement
 template .ai/workflows/plan
 template .ai/workflows/review

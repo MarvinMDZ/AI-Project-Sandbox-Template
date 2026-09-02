@@ -70,6 +70,8 @@ project's own additions go:
 - CI jobs: a second workflow file next to `.github/workflows/ci.yml`.
 - Global rules (`RULES.md`) and the hard policy (`managed-settings.json`) have no project
   layer on purpose.
+- The release a project is on: `.ai/TEMPLATE_VERSION`, moved by `/harness-update` together
+  with everything else the template owns.
 
 ## Change something
 

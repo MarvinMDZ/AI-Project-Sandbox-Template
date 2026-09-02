@@ -60,6 +60,11 @@ if cmp -s "$ROOT/.ai/RULES.md" /etc/claude-code/CLAUDE.md; then
 else
   warn "image rules differ from .ai/RULES.md: rebuild the container to apply the edit"
 fi
+if [ -f "$ROOT/.ai/TEMPLATE_VERSION" ]; then
+  pass "template version $(tr -d '[:space:]' < "$ROOT/.ai/TEMPLATE_VERSION") (/harness-update moves it)"
+else
+  warn "template version unknown: .ai/TEMPLATE_VERSION is missing"
+fi
 # Everything under $HOME is render.py's manifest: one --verify call replaces the old file counting,
 # the ~/.codex/AGENTS.md link check and the AGENTS.override.md check.
 out=$(python3 "$ROOT/.devcontainer/render.py" --verify --workspace "$ROOT" 2>&1); rc=$?
