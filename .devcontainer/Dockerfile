@@ -48,9 +48,6 @@ RUN npm install -g "pnpm@${PNPM_VERSION}" "@openai/codex@${CODEX_VERSION}" \
  && npm cache clean --force \
  && pnpm --version && codex --version
 
-# --- Claude Code hard policies: highest precedence, nobody can relax them -------
-COPY managed-settings.json /etc/claude-code/managed-settings.json
-
 # --- dev conveniences ------------------------------------------------------------
 RUN echo "node ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/node && chmod 440 /etc/sudoers.d/node \
  && mkdir -p /commandhistory && touch /commandhistory/.bash_history \
@@ -66,8 +63,11 @@ ENV HOME=/home/node \
 RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
  && claude --version
 
-# After the install on purpose: DISABLE_UPDATES also makes the installer refuse to run.
-# From here on neither the background updater nor a manual `claude update` can change the pin.
+# --- Claude Code hard policies: highest precedence, nobody can relax them -------
+# Both the file and the ENV come AFTER the install on purpose: the installer runs the CLI,
+# which honors DISABLE_UPDATES from the managed policy or the environment and then refuses
+# to install. From here on neither the updater nor a manual `claude update` can move the pin.
+COPY managed-settings.json /etc/claude-code/managed-settings.json
 ENV DISABLE_UPDATES=1 \
     DISABLE_AUTOUPDATER=1
 
