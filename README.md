@@ -66,6 +66,9 @@ and `sudo` works for you. The managed policy raises the bar for agents without s
   file itself. `Bash(sudo:*)` matches `sudo` inside compound commands and behind wrappers such
   as `nohup` or `timeout`; inside an environment runner (`bash -c`, `docker exec`, `npx`) it
   falls through to the normal permission prompt, so it holds only while a human approves.
+  `--dangerously-skip-permissions` stays available on purpose (the policy does not set
+  `disableBypassPermissionsMode`): unattended runs are what the sandbox is for, and in that
+  mode the deny rules are the only guard.
 - Codex: the `workspace-write` sandbox limits writes and network, not reads. A Codex agent can
   read any file the `node` user can, including the credential files listed above.
 
