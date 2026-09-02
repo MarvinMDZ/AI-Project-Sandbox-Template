@@ -27,7 +27,10 @@ Credentials, sessions and history are never touched.
   - `model`: profile from `models.json` (`fast` | `standard` | `reasoning` | `inherit`).
   - `tools`: Claude allowlist, comma separated (omit = all tools).
   - `sandbox`: Codex `sandbox_mode` (`read-only` | `workspace-write` | `danger-full-access`).
-  - Any other Claude subagent key (`permissionMode`, `maxTurns`, ...) is passed through to Claude only.
+  - Other keys Claude Code documents (`disallowedTools`, `permissionMode`, `maxTurns`, `skills`,
+    `memory`, `effort`, `background`, `isolation`, `color`, `initialPrompt`) pass through to
+    Claude only. Any other key is rejected by `render.py`; nested keys (`hooks`, `mcpServers`)
+    are not supported by the flat frontmatter.
 - `workflows/`: lifecycle playbooks, one per directory. Invoked as `/plan`, `/implement`, ... in Claude Code
   and `$plan`, `$implement`, ... in Codex. Format: [Agent Skills](https://agentskills.io) `SKILL.md`.
 - `skills/`: reusable know-how in the same format. Names must not collide with `workflows/`.

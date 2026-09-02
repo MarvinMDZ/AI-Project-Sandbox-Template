@@ -121,5 +121,62 @@ class RenderEndToEndTests(unittest.TestCase):
             json.loads(schema.read_text(encoding="utf-8"))
 
 
+class ValidationAndAtomicityTests(unittest.TestCase):
+    """Uses a temporary copy of the repository's .ai/ so sources can be broken safely."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.harness = self.tmp / ".ai"
+        shutil.copytree(render.HARNESS, self.harness)
+        self.home = self.tmp / "home"
+        self.original_harness = render.HARNESS
+        render.HARNESS = self.harness
+        self.addCleanup(setattr, render, "HARNESS", self.original_harness)
+
+    def write_agent(self, filename: str, text: str) -> None:
+        (self.harness / "agents" / filename).write_text(text, encoding="utf-8")
+
+    def test_rejects_unknown_frontmatter_key(self):
+        self.write_agent("bad.md", AGENT.replace("tools: Read, Grep", "toools: Read"))
+        with self.assertRaisesRegex(ValueError, "unknown frontmatter keys"):
+            render.render(self.home, self.home)
+
+    def test_rejects_invalid_name(self):
+        self.write_agent("bad.md", AGENT.replace("name: sample", "name: ../evil"))
+        with self.assertRaisesRegex(ValueError, "must match"):
+            render.render(self.home, self.home)
+
+    def test_rejects_duplicate_name(self):
+        self.write_agent("one.md", AGENT)
+        self.write_agent("two.md", AGENT)
+        with self.assertRaisesRegex(ValueError, "duplicate agent name"):
+            render.render(self.home, self.home)
+
+    def test_rejects_profile_without_claude_entry(self):
+        models = json.loads((self.harness / "models.json").read_text(encoding="utf-8"))
+        models["broken"] = {"codex": None}
+        (self.harness / "models.json").write_text(json.dumps(models), encoding="utf-8")
+        self.write_agent("bad.md", AGENT.replace("model: standard", "model: broken"))
+        with self.assertRaisesRegex(ValueError, "needs a `claude` entry"):
+            render.render(self.home, self.home)
+
+    def test_failed_render_leaves_previous_output_untouched(self):
+        before = render.render(self.home, self.home)
+        settings = (self.home / ".claude" / "settings.json").read_text(encoding="utf-8")
+        self.write_agent("bad.md", AGENT.replace("tools: Read, Grep", "toools: Read"))
+        with self.assertRaises(ValueError):
+            render.render(self.home, self.home)
+        self.assertEqual((self.home / ".claude" / "settings.json").read_text(encoding="utf-8"), settings)
+        self.assertTrue((self.home / ".codex" / "config.toml").is_file())
+        self.assertEqual(len(list((self.home / ".claude" / "agents").glob("*.md"))), before["agents"])
+
+    def test_missing_skills_directory_is_not_an_error(self):
+        shutil.rmtree(self.harness / "skills")
+        counts = render.render(self.home, self.home)
+        workflows = len([p for p in (self.harness / "workflows").iterdir() if p.is_dir()])
+        self.assertEqual(counts["skills"], workflows)
+
+
 if __name__ == "__main__":
     unittest.main()

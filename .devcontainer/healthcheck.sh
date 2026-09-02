@@ -86,6 +86,16 @@ if [ "$want" -gt 0 ] && [ "$got_claude" -eq "$want" ] && [ "$got_codex" -eq "$wa
 else
   fail "skills: .ai/ has $want, ~/.claude/skills has $got_claude, ~/.agents/skills has $got_codex"
 fi
+if cmp -s "$ROOT/.ai/claude/settings.json" "$HOME/.claude/settings.json"; then
+  pass "$HOME/.claude/settings.json rendered from .ai/claude/settings.json"
+else
+  fail "$HOME/.claude/settings.json missing or stale: the harness render did not complete (see the container start log)"
+fi
+if grep -qs '^trust_level = "trusted"' "$HOME/.codex/config.toml"; then
+  pass "$HOME/.codex/config.toml rendered with the workspace trust entry"
+else
+  fail "$HOME/.codex/config.toml missing or without the workspace trust entry: the harness render did not complete"
+fi
 
 echo "## Logins and host integration"
 if [ -f "$HOME/.claude/.credentials.json" ] || [ -n "${ANTHROPIC_API_KEY:-}" ]; then

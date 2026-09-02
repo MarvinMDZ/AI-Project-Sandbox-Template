@@ -27,7 +27,8 @@ Remove = delete the file or directory. Nothing else references it.
 ## Constraints
 
 - Frontmatter is one `key: value` per line; `description` on a single line.
-- Agent `name` must be a valid identifier for both tools: lowercase, digits, `-`.
+- Agent `name` must be a valid identifier for both tools: lowercase, digits, `-` (`render.py`
+  rejects anything else, as it rejects unknown frontmatter keys and duplicate names).
 - A skill name must be unique across `skills/` and `workflows/`.
 - Tool versions live in `.devcontainer/devcontainer.json` build args; changing them is a rebuild.
 

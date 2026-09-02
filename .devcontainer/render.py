@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -31,11 +32,16 @@ HARNESS = Path(__file__).resolve().parent.parent / ".ai"
 # Codex has no managed rules path; the image ships RULES.md here and $CODEX_HOME/AGENTS.md links to it.
 CODEX_IMAGE_RULES = Path("/etc/codex/AGENTS.md")
 
-# Frontmatter keys Claude Code understands in a subagent file. Anything else is harness-only.
+# Frontmatter keys Claude Code documents for a subagent file (flat values only; nested keys such
+# as hooks, mcpServers and experimental cannot be expressed in this parser). Everything else is
+# rejected, so a typo cannot silently drop a restriction.
 CLAUDE_AGENT_KEYS = {
     "name", "description", "tools", "disallowedTools", "model", "permissionMode",
-    "skills", "maxTurns", "memory", "effort", "background", "isolation",
+    "skills", "maxTurns", "memory", "effort", "background", "isolation", "color", "initialPrompt",
 }
+HARNESS_ONLY_KEYS = {"sandbox"}  # consumed by the Codex side only
+# Valid for both CLIs, and a safe file name: the value becomes ~/.claude/agents/<name>.md.
+AGENT_NAME = re.compile(r"[a-z0-9][a-z0-9-]*")
 # ponytail: managed = wiped and rewritten. Not wiped: ~/.claude/plugins (enablement lives in
 # settings.json) and ~/.codex/skills (Codex keeps its bundled .system skills there).
 CLAUDE_MANAGED = ["skills", "agents", "commands", "CLAUDE.md", "settings.json"]
@@ -73,10 +79,18 @@ def render_agent(src: Path, models: dict) -> tuple[str, str, str]:
             raise ValueError(f"{src}: frontmatter needs `{key}`")
     if len(meta["description"]) > 1024:
         raise ValueError(f"{src}: description must be one line (<=1024 chars)")
+    if not AGENT_NAME.fullmatch(meta["name"]):
+        raise ValueError(f"{src}: agent name {meta['name']!r} must match {AGENT_NAME.pattern}")
+    unknown = sorted(set(meta) - CLAUDE_AGENT_KEYS - HARNESS_ONLY_KEYS)
+    if unknown:
+        allowed = sorted(CLAUDE_AGENT_KEYS | HARNESS_ONLY_KEYS)
+        raise ValueError(f"{src}: unknown frontmatter keys {unknown}; allowed: {allowed}")
     profile_name = meta.get("model", "inherit")
     if profile_name not in models:
         raise ValueError(f"{src}: model profile {profile_name!r} not in .ai/models.json")
     profile = models[profile_name]
+    if "claude" not in profile:
+        raise ValueError(f".ai/models.json: profile {profile_name!r} needs a `claude` entry")
 
     claude = {k: v for k, v in meta.items() if k in CLAUDE_AGENT_KEYS}
     claude["model"] = profile["claude"]
@@ -95,11 +109,53 @@ def render_agent(src: Path, models: dict) -> tuple[str, str, str]:
     return meta["name"], claude_md, codex_toml
 
 
-def render(home: Path, workspace: Path) -> dict[str, int]:
+def build(workspace: Path) -> dict[Path, str | Path]:
+    """Read and validate every source under .ai/. Returns {target relative to $HOME: file text, or a
+    directory to copy}. Touches nothing on disk, so a broken source cannot leave a half-rendered home."""
     models = {k: v for k, v in json.loads((HARNESS / "models.json").read_text(encoding="utf-8")).items()
               if not k.startswith("_")}
-    claude, codex, agents_skills = home / ".claude", home / ".codex", home / ".agents" / "skills"
+    if not (HARNESS / "RULES.md").is_file():
+        raise FileNotFoundError(f"{HARNESS / 'RULES.md'}: missing; the image build copies it")
+    out: dict[Path, str | Path] = {}
 
+    settings = (HARNESS / "claude" / "settings.json").read_text(encoding="utf-8")
+    json.loads(settings)
+    out[Path(".claude/settings.json")] = settings
+
+    config = (HARNESS / "codex" / "config.toml").read_text(encoding="utf-8")
+    config += f'\n[projects.{json.dumps(workspace.as_posix())}]\ntrust_level = "trusted"\n'
+    tomllib.loads(config)
+    out[Path(".codex/config.toml")] = config
+
+    for group in ("skills", "workflows"):
+        group_dir = HARNESS / group
+        if not group_dir.is_dir():  # git drops an emptied directory; that is not an error
+            continue
+        for skill in sorted(p for p in group_dir.iterdir() if p.is_dir()):
+            if not (skill / "SKILL.md").is_file():
+                raise ValueError(f"{skill}: missing SKILL.md")
+            target = Path(".claude/skills") / skill.name
+            if target in out:
+                raise ValueError(f"duplicate skill name {skill.name!r} across skills/ and workflows/")
+            out[target] = skill
+            out[Path(".agents/skills") / skill.name] = skill
+
+    for src in sorted((HARNESS / "agents").glob("*.md")):
+        name, claude_md, codex_toml = render_agent(src, models)
+        target = Path(".claude/agents") / f"{name}.md"
+        if target in out:
+            raise ValueError(f"{src}: duplicate agent name {name!r}")
+        out[target] = claude_md
+        out[Path(".codex/agents") / f"{name}.toml"] = codex_toml
+
+    for schema in (HARNESS / "schemas").glob("*.json"):
+        json.loads(schema.read_text(encoding="utf-8"))
+    return out
+
+
+def install(home: Path, outputs: dict[Path, str | Path]) -> None:
+    """Wipe the managed targets and write the validated outputs. Call only after build() succeeded."""
+    claude, codex, agents_skills = home / ".claude", home / ".codex", home / ".agents" / "skills"
     for base, names in ((claude, CLAUDE_MANAGED), (codex, CODEX_MANAGED)):
         base.mkdir(parents=True, exist_ok=True)
         for name in names:
@@ -111,43 +167,25 @@ def render(home: Path, workspace: Path) -> dict[str, int]:
     shutil.rmtree(agents_skills, ignore_errors=True)
     for d in (claude / "skills", claude / "agents", codex / "agents", agents_skills):
         d.mkdir(parents=True)
-
     # Global rules are baked into the image: Claude Code loads /etc/claude-code/CLAUDE.md natively
     # (a stale ~/.claude/CLAUDE.md was wiped above); Codex only reads $CODEX_HOME/AGENTS.md, so link it.
-    if not (HARNESS / "RULES.md").is_file():
-        raise FileNotFoundError(f"{HARNESS / 'RULES.md'}: missing; the image build copies it")
     if CODEX_IMAGE_RULES.is_file():
         (codex / "AGENTS.md").symlink_to(CODEX_IMAGE_RULES)
+    for rel, content in outputs.items():
+        target = home / rel
+        if isinstance(content, Path):
+            shutil.copytree(content, target)
+        else:
+            target.write_text(content, encoding="utf-8")
 
-    settings = (HARNESS / "claude" / "settings.json").read_text(encoding="utf-8")
-    json.loads(settings)
-    (claude / "settings.json").write_text(settings, encoding="utf-8")
 
-    config = (HARNESS / "codex" / "config.toml").read_text(encoding="utf-8")
-    config += f'\n[projects.{json.dumps(workspace.as_posix())}]\ntrust_level = "trusted"\n'
-    tomllib.loads(config)
-    (codex / "config.toml").write_text(config, encoding="utf-8")
-
-    counts = {"agents": 0, "skills": 0}
-    for group in ("skills", "workflows"):
-        for skill in sorted(p for p in (HARNESS / group).iterdir() if p.is_dir()):
-            if not (skill / "SKILL.md").is_file():
-                raise ValueError(f"{skill}: missing SKILL.md")
-            for dest in (claude / "skills" / skill.name, agents_skills / skill.name):
-                if dest.exists():
-                    raise ValueError(f"duplicate skill name {skill.name!r} across skills/ and workflows/")
-                shutil.copytree(skill, dest)
-            counts["skills"] += 1
-
-    for src in sorted((HARNESS / "agents").glob("*.md")):
-        name, claude_md, codex_toml = render_agent(src, models)
-        (claude / "agents" / f"{name}.md").write_text(claude_md, encoding="utf-8")
-        (codex / "agents" / f"{name}.toml").write_text(codex_toml, encoding="utf-8")
-        counts["agents"] += 1
-
-    for schema in (HARNESS / "schemas").glob("*.json"):
-        json.loads(schema.read_text(encoding="utf-8"))
-    return counts
+def render(home: Path, workspace: Path) -> dict[str, int]:
+    outputs = build(workspace)
+    install(home, outputs)
+    return {
+        "agents": sum(1 for p in outputs if p.parts[:2] == (".claude", "agents")),
+        "skills": sum(1 for p in outputs if p.parts[:2] == (".claude", "skills")),
+    }
 
 
 def main() -> int:
