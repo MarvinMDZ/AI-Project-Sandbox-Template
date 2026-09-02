@@ -60,13 +60,16 @@ USER node
 ENV HOME=/home/node \
     PATH=/home/node/.local/bin:${PATH} \
     CLAUDE_CONFIG_DIR=/home/node/.claude \
-    CODEX_HOME=/home/node/.codex \
-    DISABLE_UPDATES=1 \
-    DISABLE_AUTOUPDATER=1
+    CODEX_HOME=/home/node/.codex
 
 # --- Claude Code: native installer pinned by build arg (version | stable | latest)
 RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
  && claude --version
+
+# After the install on purpose: DISABLE_UPDATES also makes the installer refuse to run.
+# From here on neither the background updater nor a manual `claude update` can change the pin.
+ENV DISABLE_UPDATES=1 \
+    DISABLE_AUTOUPDATER=1
 
 # Mount points must exist, owned by node, before the volumes are attached.
 # ~/.claude.json follows CLAUDE_CONFIG_DIR; the symlink is a fallback so it lands in the volume either way.
