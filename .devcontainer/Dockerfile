@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Sandbox image: every tool the agents may use is installed and pinned HERE.
 # Nothing is inherited from the host. Change a version => edit the arg in devcontainer.json and rebuild.
-FROM node:22-bookworm
+FROM node:24-bookworm
 
 ARG TZ=Europe/Madrid
 ARG CLAUDE_CODE_VERSION=stable

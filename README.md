@@ -24,7 +24,7 @@ docs), both versioned in the repository. Nothing leaks in from the host except a
 ```text
 .devcontainer/
   devcontainer.json     image build args (tool versions), volumes, host passthrough env
-  Dockerfile            Node 22, pnpm, Python 3 + uv, git, gh, cloudflared, Claude Code, Codex
+  Dockerfile            Node 24, pnpm, Python 3 + uv, git, gh, cloudflared, Claude Code, Codex
   managed-settings.json Claude Code hard policies (credential, key and .env reads, sudo), not overridable
   post-start.sh         every start: SSH keys, git trust, harness render, gh, cloudflared
   healthcheck.sh        tools, isolation, harness render, logins; CI runs it after the build
@@ -116,7 +116,7 @@ bloated conversation.
 - Claude Code / Codex / pnpm / uv: `.devcontainer/devcontainer.json` build args, then
   *Rebuild Container*. `stable` and `latest` channels resolve at build time; use an exact
   version for full reproducibility.
-- Base image: `node:22-bookworm` in the Dockerfile; pin a digest for byte-identical builds.
+- Base image: `node:24-bookworm` in the Dockerfile; pin a digest for byte-identical builds.
 - Docker feature `docker-outside-of-docker` is pinned to major `1`.
 
 ## Requirements on the host
