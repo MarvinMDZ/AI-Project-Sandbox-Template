@@ -19,9 +19,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # devcontainer.json bind-mounts ~/.ssh read-only; Docker refuses a missing source path.
-      - run: mkdir -p ~/.ssh
+      # devcontainer.json bind-mounts ~/.ssh read-only (Docker refuses a missing source path).
+      # Seed it so post-start.sh exercises the copy branch: a key, a CRLF config, a subdirectory.
+      - run: |
+          mkdir -p ~/.ssh/sockets
+          ssh-keygen -q -t ed25519 -N "" -f ~/.ssh/id_ed25519
+          printf 'Host github.com\r\n  User git\r\n' > ~/.ssh/config
       - uses: devcontainers/ci@v0.3
         with:
           push: never
-          runCmd: bash .devcontainer/healthcheck.sh
+          # One shell string: without set -e only the last command would decide the job;
+          # -x names the failing assertion in the log.
+          runCmd: |
+            set -ex
+            bash .devcontainer/healthcheck.sh
+            test -f "$HOME/.ssh/id_ed25519"
+            test "$(stat -c %a "$HOME/.ssh/id_ed25519")" = 600
+            test "$(stat -c %a "$HOME/.ssh/config")" = 644
+            if grep -q "$(printf '\r')" "$HOME/.ssh/config"; then echo "CRLF survived in ~/.ssh/config"; exit 1; fi
+            test ! -e "$HOME/.ssh/sockets"
