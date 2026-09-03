@@ -53,6 +53,11 @@ RUN echo "node ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/node && chmod 440 /etc/
  && mkdir -p /commandhistory && touch /commandhistory/.bash_history \
  && chown -R node:node /commandhistory
 
+# Created here, as root and before the COPY --chmod=0444 lines below: a parent directory that
+# COPY --chmod creates itself inherits 0444, and node then cannot traverse it (render.py dies
+# with PermissionError on /etc/codex/AGENTS.md).
+RUN mkdir -p -m 0755 /etc/claude-code /etc/codex
+
 USER node
 ENV HOME=/home/node \
     PATH=/home/node/.local/bin:${PATH} \

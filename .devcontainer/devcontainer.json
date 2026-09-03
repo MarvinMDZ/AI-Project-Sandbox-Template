@@ -17,7 +17,14 @@
   },
   "features": {
     // docker + compose CLIs talking to the HOST daemon (the feature mounts the socket).
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+    // dockerDashComposeVersion "none": the moby-compose package the feature installs already
+    // provides `docker compose` v2. The default "latest" would additionally fetch the standalone
+    // docker-compose binary, which resolves its version with an unauthenticated
+    // `git ls-remote https://github.com/docker/compose` and fails the build when GitHub
+    // answers that with an auth challenge.
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "dockerDashComposeVersion": "none"
+    }
   },
   "remoteUser": "node",
   // PID 1 reaps zombies left by background processes (cloudflared, dev servers). A portable
